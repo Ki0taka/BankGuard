@@ -5,7 +5,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UserService {
-  constructor(private readonly userRepository: UserRepository) {}
+  constructor(private readonly userRepository: UserRepository) { }
 
   create(createUserDto: CreateUserDto) {
     return 'This action adds a new user';
@@ -16,7 +16,11 @@ export class UserService {
   }
 
   findOne(id: string) {
-    return `This action returns a #user id`;
+    return this.userRepository.findOneBy({ id } as any);
+  }
+
+  findOneBy(condition: any) {
+    return this.userRepository.findOneBy(condition);
   }
 
   update(id: string, updateUserDto: UpdateUserDto) {

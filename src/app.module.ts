@@ -1,7 +1,12 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { ElasticsearchModule } from '@nestjs/elasticsearch';
 
+import { EncryptionModule } from './common/encryption/encryption.module';
+import { AuthModule } from './auth/auth.module';
 import { RoleModule } from './role/role.module';
 import { UserModule } from './user/user.module';
 import { RequisitionModule } from './requisition/requisition.module';
@@ -26,6 +31,32 @@ import { AggregateSnapshotModule } from './aggregate-snapshot/aggregate-snapshot
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => ({
+        type: 'postgres',
+        host: configService.get<string>('DB_HOST'),
+        port: configService.get<number>('DB_PORT'),
+        username: configService.get<string>('DB_USER'),
+        password: configService.get<string>('DB_PASSWORD'),
+        database: configService.get<string>('DB_NAME'),
+        autoLoadEntities: true,
+        synchronize: true, // Use migrations in production
+      }),
+      inject: [ConfigService],
+    }),
+    ElasticsearchModule.registerAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        node: configService.get<string>('ELASTICSEARCH_NODE'),
+      }),
+      inject: [ConfigService],
+    }),
+    EncryptionModule,
+    AuthModule,
     RoleModule,
     UserModule,
     RequisitionModule,
