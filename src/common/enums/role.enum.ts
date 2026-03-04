@@ -1,0 +1,6 @@
+export enum RoleEnum {
+  ADMIN = 'ADMIN',
+  ACCOUNTS = 'ACCOUNTS',
+  COMPLIANCE = 'COMPLIANCE',
+  AUDITOR = 'AUDITOR',
+}

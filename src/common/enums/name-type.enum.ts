@@ -1,0 +1,6 @@
+export enum NameTypeEnum {
+  PRIMARY_NAME = 'PRIMARY_NAME',
+  AKA = 'AKA',
+  FKA = 'FKA',
+  PRIMARY_NAME_VARIATION = 'PRIMARY_NAME_VARIATION',
+}

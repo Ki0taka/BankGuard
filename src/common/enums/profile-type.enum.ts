@@ -1,0 +1,5 @@
+export enum ProfileTypeEnum {
+  INDIVIDUAL = 'INDIVIDUAL',
+  ORGANIZATION = 'ORGANIZATION',
+  VESSEL = 'VESSEL',
+}

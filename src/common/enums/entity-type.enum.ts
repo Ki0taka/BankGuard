@@ -1,0 +1,5 @@
+export enum EntityTypeEnum {
+  INDIVIDUAL = 'INDIVIDUAL',
+  ORGANIZATION = 'ORGANIZATION',
+  VESSEL = 'VESSEL',
+}

@@ -1,0 +1,23 @@
+const fs = require('fs');
+const path = require('path');
+
+const eventsDir = path.join(__dirname, 'src', 'events');
+fs.mkdirSync(eventsDir, { recursive: true });
+
+const files = {
+    'domain-event.ts': `export abstract class DomainEvent {\n  id: string;\n  eventType: string;\n  aggregateId: string;\n  aggregateType: string;\n  userId: string;\n  ipAddress: string;\n  occurredAt: Date;\n  schemaVersion: number;\n\n  getEventDetails(): Record<string, any> {\n    return {};\n  }\n\n  abstract getEventType(): string;\n}\n`,
+    'entity-created.event.ts': `import { DomainEvent } from './domain-event';\nimport { EntityTypeEnum } from '../common/enums/entity-type.enum';\n\nexport class EntityCreatedEvent extends DomainEvent {\n  entityType: EntityTypeEnum;\n  groupId: number;\n  requisitionId: string;\n\n  getEventType(): string {\n    return 'ENTITY_CREATED';\n  }\n\n  getCreationDetails(): Record<string, any> {\n    return { entityType: this.entityType, groupId: this.groupId, requisitionId: this.requisitionId };\n  }\n}\n`,
+    'entity-updated.event.ts': `import { DomainEvent } from './domain-event';\n\nexport class EntityUpdatedEvent extends DomainEvent {\n  fieldName: string;\n  oldValue: string;\n  newValue: string;\n\n  getEventType(): string {\n    return 'ENTITY_UPDATED';\n  }\n\n  getUpdateDetails(): Record<string, any> {\n    return { fieldName: this.fieldName, oldValue: this.oldValue, newValue: this.newValue };\n  }\n}\n`,
+    'entity-status-changed.event.ts': `import { DomainEvent } from './domain-event';\nimport { StatusEnum } from '../common/enums/status.enum';\nimport { RiskEnum } from '../common/enums/risk.enum';\n\nexport class EntityStatusChangedEvent extends DomainEvent {\n  previousStatus: StatusEnum;\n  newStatus: StatusEnum;\n  riskLevel: RiskEnum;\n  changeReason: string;\n\n  getEventType(): string {\n    return 'ENTITY_STATUS_CHANGED';\n  }\n\n  getStatusDetails(): Record<string, any> {\n    return { previousStatus: this.previousStatus, newStatus: this.newStatus, riskLevel: this.riskLevel, changeReason: this.changeReason };\n  }\n}\n`,
+    'requisition-approved.event.ts': `import { DomainEvent } from './domain-event';\n\nexport class RequisitionApprovedEvent extends DomainEvent {\n  requisitionNumber: string;\n  approvedBy: string;\n  approvalComment: string;\n\n  getEventType(): string {\n    return 'REQUISITION_APPROVED';\n  }\n\n  getApprovalDetails(): Record<string, any> {\n    return { requisitionNumber: this.requisitionNumber, approvedBy: this.approvedBy, approvalComment: this.approvalComment };\n  }\n}\n`,
+    'requisition-rejected.event.ts': `import { DomainEvent } from './domain-event';\n\nexport class RequisitionRejectedEvent extends DomainEvent {\n  requisitionNumber: string;\n  rejectedBy: string;\n  rejectionReason: string;\n\n  getEventType(): string {\n    return 'REQUISITION_REJECTED';\n  }\n\n  getRejectionDetails(): Record<string, any> {\n    return { requisitionNumber: this.requisitionNumber, rejectedBy: this.rejectedBy, rejectionReason: this.rejectionReason };\n  }\n}\n`,
+    'bank-account-frozen.event.ts': `import { DomainEvent } from './domain-event';\n\nexport class BankAccountFrozenEvent extends DomainEvent {\n  accountId: string;\n  frozenBy: string;\n  legalBasis: string;\n  entityId: string;\n\n  getEventType(): string {\n    return 'BANK_ACCOUNT_FROZEN';\n  }\n\n  getFreezeDetails(): Record<string, any> {\n    return { accountId: this.accountId, frozenBy: this.frozenBy, legalBasis: this.legalBasis, entityId: this.entityId };\n  }\n}\n`,
+    'export-generated.event.ts': `import { DomainEvent } from './domain-event';\n\nexport class ExportGeneratedEvent extends DomainEvent {\n  exportJobId: string;\n  rowCount: number;\n  format: string;\n  fileHash: string;\n\n  getEventType(): string {\n    return 'EXPORT_GENERATED';\n  }\n\n  getExportDetails(): Record<string, any> {\n    return { exportJobId: this.exportJobId, rowCount: this.rowCount, format: this.format, fileHash: this.fileHash };\n  }\n}\n`,
+    'user-login.event.ts': `import { DomainEvent } from './domain-event';\n\nexport class UserLoginEvent extends DomainEvent {\n  loginSuccess: boolean;\n  failureReason: string;\n  attemptCount: number;\n\n  getEventType(): string {\n    return 'USER_LOGIN';\n  }\n\n  getLoginDetails(): Record<string, any> {\n    return { loginSuccess: this.loginSuccess, failureReason: this.failureReason, attemptCount: this.attemptCount };\n  }\n}\n`,
+};
+
+for (const [filename, content] of Object.entries(files)) {
+    fs.writeFileSync(path.join(eventsDir, filename), content);
+}
+
+console.log('Events created successfully!');

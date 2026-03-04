@@ -1,0 +1,5 @@
+export enum QualityEnum {
+  GOOD_QUALITY = 'GOOD_QUALITY',
+  LOW_QUALITY = 'LOW_QUALITY',
+  UNKNOWN = 'UNKNOWN',
+}

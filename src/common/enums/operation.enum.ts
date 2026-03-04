@@ -1,0 +1,5 @@
+export enum OperationEnum {
+  GEL = 'GEL',
+  PROLONGATION = 'PROLONGATION',
+  DEMANDE_INFORMATION = 'DEMANDE_INFORMATION',
+}
