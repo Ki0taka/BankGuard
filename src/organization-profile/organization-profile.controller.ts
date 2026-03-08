@@ -1,11 +1,21 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { OrganizationProfileService } from './organization-profile.service';
 import { CreateOrganizationProfileDto } from './dto/create-organization-profile.dto';
 import { UpdateOrganizationProfileDto } from './dto/update-organization-profile.dto';
 
 @Controller('organization-profile')
 export class OrganizationProfileController {
-  constructor(private readonly organizationProfileService: OrganizationProfileService) {}
+  constructor(
+    private readonly organizationProfileService: OrganizationProfileService,
+  ) {}
 
   @Post()
   create(@Body() createOrganizationProfileDto: CreateOrganizationProfileDto) {
@@ -23,8 +33,14 @@ export class OrganizationProfileController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateOrganizationProfileDto: UpdateOrganizationProfileDto) {
-    return this.organizationProfileService.update(id, updateOrganizationProfileDto);
+  update(
+    @Param('id') id: string,
+    @Body() updateOrganizationProfileDto: UpdateOrganizationProfileDto,
+  ) {
+    return this.organizationProfileService.update(
+      id,
+      updateOrganizationProfileDto,
+    );
   }
 
   @Delete(':id')

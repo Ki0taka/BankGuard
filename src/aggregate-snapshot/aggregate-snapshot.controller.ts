@@ -1,11 +1,21 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { AggregateSnapshotService } from './aggregate-snapshot.service';
 import { CreateAggregateSnapshotDto } from './dto/create-aggregate-snapshot.dto';
 import { UpdateAggregateSnapshotDto } from './dto/update-aggregate-snapshot.dto';
 
 @Controller('aggregate-snapshot')
 export class AggregateSnapshotController {
-  constructor(private readonly aggregateSnapshotService: AggregateSnapshotService) {}
+  constructor(
+    private readonly aggregateSnapshotService: AggregateSnapshotService,
+  ) {}
 
   @Post()
   create(@Body() createAggregateSnapshotDto: CreateAggregateSnapshotDto) {
@@ -23,7 +33,10 @@ export class AggregateSnapshotController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateAggregateSnapshotDto: UpdateAggregateSnapshotDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateAggregateSnapshotDto: UpdateAggregateSnapshotDto,
+  ) {
     return this.aggregateSnapshotService.update(id, updateAggregateSnapshotDto);
   }
 

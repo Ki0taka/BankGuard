@@ -13,6 +13,11 @@ export class EntityStatusChangedEvent extends DomainEvent {
   }
 
   getStatusDetails(): Record<string, any> {
-    return { previousStatus: this.previousStatus, newStatus: this.newStatus, riskLevel: this.riskLevel, changeReason: this.changeReason };
+    return {
+      previousStatus: this.previousStatus,
+      newStatus: this.newStatus,
+      riskLevel: this.riskLevel,
+      changeReason: this.changeReason,
+    };
   }
 }

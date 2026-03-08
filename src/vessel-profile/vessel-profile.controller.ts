@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { VesselProfileService } from './vessel-profile.service';
 import { CreateVesselProfileDto } from './dto/create-vessel-profile.dto';
 import { UpdateVesselProfileDto } from './dto/update-vessel-profile.dto';
@@ -23,7 +31,10 @@ export class VesselProfileController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateVesselProfileDto: UpdateVesselProfileDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateVesselProfileDto: UpdateVesselProfileDto,
+  ) {
     return this.vesselProfileService.update(id, updateVesselProfileDto);
   }
 

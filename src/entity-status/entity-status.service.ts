@@ -5,7 +5,9 @@ import { UpdateEntityStatusDto } from './dto/update-entity-status.dto';
 
 @Injectable()
 export class EntityStatusService {
-  constructor(private readonly entityStatusRepository: EntityStatusRepository) {}
+  constructor(
+    private readonly entityStatusRepository: EntityStatusRepository,
+  ) {}
 
   create(createEntityStatusDto: CreateEntityStatusDto) {
     return 'This action adds a new entityStatus';

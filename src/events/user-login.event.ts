@@ -10,6 +10,10 @@ export class UserLoginEvent extends DomainEvent {
   }
 
   getLoginDetails(): Record<string, any> {
-    return { loginSuccess: this.loginSuccess, failureReason: this.failureReason, attemptCount: this.attemptCount };
+    return {
+      loginSuccess: this.loginSuccess,
+      failureReason: this.failureReason,
+      attemptCount: this.attemptCount,
+    };
   }
 }

@@ -5,7 +5,9 @@ import { UpdateEntityDateOfBirthDto } from './dto/update-entity-date-of-birth.dt
 
 @Injectable()
 export class EntityDateOfBirthService {
-  constructor(private readonly entityDateOfBirthRepository: EntityDateOfBirthRepository) {}
+  constructor(
+    private readonly entityDateOfBirthRepository: EntityDateOfBirthRepository,
+  ) {}
 
   create(createEntityDateOfBirthDto: CreateEntityDateOfBirthDto) {
     return 'This action adds a new entityDateOfBirth';

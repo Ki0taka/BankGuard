@@ -11,6 +11,11 @@ export class ExportGeneratedEvent extends DomainEvent {
   }
 
   getExportDetails(): Record<string, any> {
-    return { exportJobId: this.exportJobId, rowCount: this.rowCount, format: this.format, fileHash: this.fileHash };
+    return {
+      exportJobId: this.exportJobId,
+      rowCount: this.rowCount,
+      format: this.format,
+      fileHash: this.fileHash,
+    };
   }
 }

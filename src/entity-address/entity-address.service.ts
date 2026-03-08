@@ -5,7 +5,9 @@ import { UpdateEntityAddressDto } from './dto/update-entity-address.dto';
 
 @Injectable()
 export class EntityAddressService {
-  constructor(private readonly entityAddressRepository: EntityAddressRepository) {}
+  constructor(
+    private readonly entityAddressRepository: EntityAddressRepository,
+  ) {}
 
   create(createEntityAddressDto: CreateEntityAddressDto) {
     return 'This action adds a new entityAddress';

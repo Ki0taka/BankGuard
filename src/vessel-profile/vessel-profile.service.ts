@@ -5,7 +5,9 @@ import { UpdateVesselProfileDto } from './dto/update-vessel-profile.dto';
 
 @Injectable()
 export class VesselProfileService {
-  constructor(private readonly vesselProfileRepository: VesselProfileRepository) {}
+  constructor(
+    private readonly vesselProfileRepository: VesselProfileRepository,
+  ) {}
 
   create(createVesselProfileDto: CreateVesselProfileDto) {
     return 'This action adds a new vesselProfile';

@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { SyncRunService } from './sync-run.service';
 import { CreateSyncRunDto } from './dto/create-sync-run.dto';
 import { UpdateSyncRunDto } from './dto/update-sync-run.dto';

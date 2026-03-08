@@ -11,6 +11,11 @@ export class BankAccountFrozenEvent extends DomainEvent {
   }
 
   getFreezeDetails(): Record<string, any> {
-    return { accountId: this.accountId, frozenBy: this.frozenBy, legalBasis: this.legalBasis, entityId: this.entityId };
+    return {
+      accountId: this.accountId,
+      frozenBy: this.frozenBy,
+      legalBasis: this.legalBasis,
+      entityId: this.entityId,
+    };
   }
 }

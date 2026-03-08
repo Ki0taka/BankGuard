@@ -1,11 +1,21 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { EntityDateOfBirthService } from './entity-date-of-birth.service';
 import { CreateEntityDateOfBirthDto } from './dto/create-entity-date-of-birth.dto';
 import { UpdateEntityDateOfBirthDto } from './dto/update-entity-date-of-birth.dto';
 
 @Controller('entity-date-of-birth')
 export class EntityDateOfBirthController {
-  constructor(private readonly entityDateOfBirthService: EntityDateOfBirthService) {}
+  constructor(
+    private readonly entityDateOfBirthService: EntityDateOfBirthService,
+  ) {}
 
   @Post()
   create(@Body() createEntityDateOfBirthDto: CreateEntityDateOfBirthDto) {
@@ -23,7 +33,10 @@ export class EntityDateOfBirthController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateEntityDateOfBirthDto: UpdateEntityDateOfBirthDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateEntityDateOfBirthDto: UpdateEntityDateOfBirthDto,
+  ) {
     return this.entityDateOfBirthService.update(id, updateEntityDateOfBirthDto);
   }
 

@@ -11,6 +11,10 @@ export class EntityCreatedEvent extends DomainEvent {
   }
 
   getCreationDetails(): Record<string, any> {
-    return { entityType: this.entityType, groupId: this.groupId, requisitionId: this.requisitionId };
+    return {
+      entityType: this.entityType,
+      groupId: this.groupId,
+      requisitionId: this.requisitionId,
+    };
   }
 }

@@ -10,6 +10,10 @@ export class RequisitionApprovedEvent extends DomainEvent {
   }
 
   getApprovalDetails(): Record<string, any> {
-    return { requisitionNumber: this.requisitionNumber, approvedBy: this.approvedBy, approvalComment: this.approvalComment };
+    return {
+      requisitionNumber: this.requisitionNumber,
+      approvedBy: this.approvedBy,
+      approvalComment: this.approvalComment,
+    };
   }
 }

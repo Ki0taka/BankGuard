@@ -27,6 +27,7 @@ import { SyncRunModule } from './sync-run/sync-run.module';
 import { SyncedEntityModule } from './synced-entity/synced-entity.module';
 import { AuditLogModule } from './audit-log/audit-log.module';
 import { AggregateSnapshotModule } from './aggregate-snapshot/aggregate-snapshot.module';
+import { DatabaseModule } from './database/database.module';
 
 @Module({
   imports: [
@@ -76,8 +77,9 @@ import { AggregateSnapshotModule } from './aggregate-snapshot/aggregate-snapshot
     SyncedEntityModule,
     AuditLogModule,
     AggregateSnapshotModule,
+    DatabaseModule,
   ],
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule { }
+export class AppModule {}
