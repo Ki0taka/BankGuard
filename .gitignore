@@ -42,6 +42,10 @@ lerna-debug.log*
 .env.production.local
 .env.local
 
+# Project notes (local context)
+GEMINI.md
+Project_details.txt
+
 # temp directory
 .temp
 .tmp
