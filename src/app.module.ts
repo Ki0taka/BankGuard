@@ -7,7 +7,6 @@ import { ElasticsearchModule } from '@nestjs/elasticsearch';
 
 import { EncryptionModule } from './common/encryption/encryption.module';
 import { AuthModule } from './auth/auth.module';
-import { RoleModule } from './role/role.module';
 import { UserModule } from './user/user.module';
 import { RequisitionModule } from './requisition/requisition.module';
 import { SanctionedEntityModule } from './sanctioned-entity/sanctioned-entity.module';
@@ -57,7 +56,6 @@ import { AggregateSnapshotModule } from './aggregate-snapshot/aggregate-snapshot
     }),
     EncryptionModule,
     AuthModule,
-    RoleModule,
     UserModule,
     RequisitionModule,
     SanctionedEntityModule,
