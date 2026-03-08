@@ -5,7 +5,7 @@ COPY package*.json ./
 
 # ---- Dependencies ----
 FROM base AS dependencies
-RUN npm ci
+RUN npm ci --legacy-peer-deps
 
 # ---- Build ----
 FROM dependencies AS build
@@ -16,7 +16,7 @@ RUN npm run build
 FROM node:20-alpine AS production
 WORKDIR /usr/src/app
 COPY package*.json ./
-RUN npm ci --only=production
+RUN npm ci --only=production --legacy-peer-deps
 COPY --from=build /usr/src/app/dist ./dist
 
 # Bind to all network interfaces so that it can be mapped to the host OS
