@@ -5,7 +5,9 @@ import { UpdateAggregateSnapshotDto } from './dto/update-aggregate-snapshot.dto'
 
 @Injectable()
 export class AggregateSnapshotService {
-  constructor(private readonly aggregateSnapshotRepository: AggregateSnapshotRepository) {}
+  constructor(
+    private readonly aggregateSnapshotRepository: AggregateSnapshotRepository,
+  ) {}
 
   create(createAggregateSnapshotDto: CreateAggregateSnapshotDto) {
     return 'This action adds a new aggregateSnapshot';

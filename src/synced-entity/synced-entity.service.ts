@@ -5,7 +5,9 @@ import { UpdateSyncedEntityDto } from './dto/update-synced-entity.dto';
 
 @Injectable()
 export class SyncedEntityService {
-  constructor(private readonly syncedEntityRepository: SyncedEntityRepository) {}
+  constructor(
+    private readonly syncedEntityRepository: SyncedEntityRepository,
+  ) {}
 
   create(createSyncedEntityDto: CreateSyncedEntityDto) {
     return 'This action adds a new syncedEntity';

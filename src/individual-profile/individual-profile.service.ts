@@ -5,7 +5,9 @@ import { UpdateIndividualProfileDto } from './dto/update-individual-profile.dto'
 
 @Injectable()
 export class IndividualProfileService {
-  constructor(private readonly individualProfileRepository: IndividualProfileRepository) {}
+  constructor(
+    private readonly individualProfileRepository: IndividualProfileRepository,
+  ) {}
 
   create(createIndividualProfileDto: CreateIndividualProfileDto) {
     return 'This action adds a new individualProfile';

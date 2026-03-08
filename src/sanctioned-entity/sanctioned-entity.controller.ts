@@ -1,11 +1,21 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { SanctionedEntityService } from './sanctioned-entity.service';
 import { CreateSanctionedEntityDto } from './dto/create-sanctioned-entity.dto';
 import { UpdateSanctionedEntityDto } from './dto/update-sanctioned-entity.dto';
 
 @Controller('sanctioned-entity')
 export class SanctionedEntityController {
-  constructor(private readonly sanctionedEntityService: SanctionedEntityService) {}
+  constructor(
+    private readonly sanctionedEntityService: SanctionedEntityService,
+  ) {}
 
   @Post()
   create(@Body() createSanctionedEntityDto: CreateSanctionedEntityDto) {
@@ -23,7 +33,10 @@ export class SanctionedEntityController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateSanctionedEntityDto: UpdateSanctionedEntityDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateSanctionedEntityDto: UpdateSanctionedEntityDto,
+  ) {
     return this.sanctionedEntityService.update(id, updateSanctionedEntityDto);
   }
 

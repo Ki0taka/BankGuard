@@ -5,7 +5,9 @@ import { UpdateSanctionedEntityDto } from './dto/update-sanctioned-entity.dto';
 
 @Injectable()
 export class SanctionedEntityService {
-  constructor(private readonly sanctionedEntityRepository: SanctionedEntityRepository) {}
+  constructor(
+    private readonly sanctionedEntityRepository: SanctionedEntityRepository,
+  ) {}
 
   create(createSanctionedEntityDto: CreateSanctionedEntityDto) {
     return 'This action adds a new sanctionedEntity';

@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { EntityProfileService } from './entity-profile.service';
 import { CreateEntityProfileDto } from './dto/create-entity-profile.dto';
 import { UpdateEntityProfileDto } from './dto/update-entity-profile.dto';
@@ -23,7 +31,10 @@ export class EntityProfileController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateEntityProfileDto: UpdateEntityProfileDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateEntityProfileDto: UpdateEntityProfileDto,
+  ) {
     return this.entityProfileService.update(id, updateEntityProfileDto);
   }
 

@@ -10,6 +10,10 @@ export class EntityUpdatedEvent extends DomainEvent {
   }
 
   getUpdateDetails(): Record<string, any> {
-    return { fieldName: this.fieldName, oldValue: this.oldValue, newValue: this.newValue };
+    return {
+      fieldName: this.fieldName,
+      oldValue: this.oldValue,
+      newValue: this.newValue,
+    };
   }
 }

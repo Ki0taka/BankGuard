@@ -5,7 +5,9 @@ import { UpdateEvidenceDocumentDto } from './dto/update-evidence-document.dto';
 
 @Injectable()
 export class EvidenceDocumentService {
-  constructor(private readonly evidenceDocumentRepository: EvidenceDocumentRepository) {}
+  constructor(
+    private readonly evidenceDocumentRepository: EvidenceDocumentRepository,
+  ) {}
 
   create(createEvidenceDocumentDto: CreateEvidenceDocumentDto) {
     return 'This action adds a new evidenceDocument';

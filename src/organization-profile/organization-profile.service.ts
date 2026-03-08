@@ -5,7 +5,9 @@ import { UpdateOrganizationProfileDto } from './dto/update-organization-profile.
 
 @Injectable()
 export class OrganizationProfileService {
-  constructor(private readonly organizationProfileRepository: OrganizationProfileRepository) {}
+  constructor(
+    private readonly organizationProfileRepository: OrganizationProfileRepository,
+  ) {}
 
   create(createOrganizationProfileDto: CreateOrganizationProfileDto) {
     return 'This action adds a new organizationProfile';
@@ -19,7 +21,10 @@ export class OrganizationProfileService {
     return `This action returns a #organizationProfile id`;
   }
 
-  update(id: string, updateOrganizationProfileDto: UpdateOrganizationProfileDto) {
+  update(
+    id: string,
+    updateOrganizationProfileDto: UpdateOrganizationProfileDto,
+  ) {
     return `This action updates a #organizationProfile id`;
   }
 

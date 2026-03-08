@@ -5,7 +5,9 @@ import { UpdateExternalSourceDto } from './dto/update-external-source.dto';
 
 @Injectable()
 export class ExternalSourceService {
-  constructor(private readonly externalSourceRepository: ExternalSourceRepository) {}
+  constructor(
+    private readonly externalSourceRepository: ExternalSourceRepository,
+  ) {}
 
   create(createExternalSourceDto: CreateExternalSourceDto) {
     return 'This action adds a new externalSource';

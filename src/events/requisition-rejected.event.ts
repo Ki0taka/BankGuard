@@ -10,6 +10,10 @@ export class RequisitionRejectedEvent extends DomainEvent {
   }
 
   getRejectionDetails(): Record<string, any> {
-    return { requisitionNumber: this.requisitionNumber, rejectedBy: this.rejectedBy, rejectionReason: this.rejectionReason };
+    return {
+      requisitionNumber: this.requisitionNumber,
+      rejectedBy: this.rejectedBy,
+      rejectionReason: this.rejectionReason,
+    };
   }
 }

@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { SyncedEntityService } from './synced-entity.service';
 import { CreateSyncedEntityDto } from './dto/create-synced-entity.dto';
 import { UpdateSyncedEntityDto } from './dto/update-synced-entity.dto';
@@ -23,7 +31,10 @@ export class SyncedEntityController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateSyncedEntityDto: UpdateSyncedEntityDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateSyncedEntityDto: UpdateSyncedEntityDto,
+  ) {
     return this.syncedEntityService.update(id, updateSyncedEntityDto);
   }
 

@@ -5,7 +5,9 @@ import { UpdateEntityProfileDto } from './dto/update-entity-profile.dto';
 
 @Injectable()
 export class EntityProfileService {
-  constructor(private readonly entityProfileRepository: EntityProfileRepository) {}
+  constructor(
+    private readonly entityProfileRepository: EntityProfileRepository,
+  ) {}
 
   create(createEntityProfileDto: CreateEntityProfileDto) {
     return 'This action adds a new entityProfile';

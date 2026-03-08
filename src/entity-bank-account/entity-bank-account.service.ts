@@ -5,7 +5,9 @@ import { UpdateEntityBankAccountDto } from './dto/update-entity-bank-account.dto
 
 @Injectable()
 export class EntityBankAccountService {
-  constructor(private readonly entityBankAccountRepository: EntityBankAccountRepository) {}
+  constructor(
+    private readonly entityBankAccountRepository: EntityBankAccountRepository,
+  ) {}
 
   create(createEntityBankAccountDto: CreateEntityBankAccountDto) {
     return 'This action adds a new entityBankAccount';

@@ -1,11 +1,21 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
 import { EntityBankAccountService } from './entity-bank-account.service';
 import { CreateEntityBankAccountDto } from './dto/create-entity-bank-account.dto';
 import { UpdateEntityBankAccountDto } from './dto/update-entity-bank-account.dto';
 
 @Controller('entity-bank-account')
 export class EntityBankAccountController {
-  constructor(private readonly entityBankAccountService: EntityBankAccountService) {}
+  constructor(
+    private readonly entityBankAccountService: EntityBankAccountService,
+  ) {}
 
   @Post()
   create(@Body() createEntityBankAccountDto: CreateEntityBankAccountDto) {
@@ -23,7 +33,10 @@ export class EntityBankAccountController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateEntityBankAccountDto: UpdateEntityBankAccountDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateEntityBankAccountDto: UpdateEntityBankAccountDto,
+  ) {
     return this.entityBankAccountService.update(id, updateEntityBankAccountDto);
   }
 

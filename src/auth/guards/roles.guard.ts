@@ -5,29 +5,29 @@ import { RoleEnum } from '../../common/enums/role.enum';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
-    constructor(private reflector: Reflector) { }
+  constructor(private reflector: Reflector) {}
 
-    canActivate(context: ExecutionContext): boolean {
-        const requiredRoles = this.reflector.getAllAndOverride<string[]>(ROLES_KEY, [
-            context.getHandler(),
-            context.getClass(),
-        ]);
+  canActivate(context: ExecutionContext): boolean {
+    const requiredRoles = this.reflector.getAllAndOverride<string[]>(
+      ROLES_KEY,
+      [context.getHandler(), context.getClass()],
+    );
 
-        if (!requiredRoles) {
-            return true; // No roles required, allow access
-        }
-
-        const { user } = context.switchToHttp().getRequest();
-        if (!user) {
-            return false;
-        }
-
-        // SUPER_ADMIN has access to everything
-        if (user.role === RoleEnum.SUPER_ADMIN) {
-            return true;
-        }
-
-        // Check if the user's role matches any of the required roles
-        return requiredRoles.some((role) => user.role === role);
+    if (!requiredRoles) {
+      return true; // No roles required, allow access
     }
+
+    const { user } = context.switchToHttp().getRequest();
+    if (!user) {
+      return false;
+    }
+
+    // SUPER_ADMIN has access to everything
+    if (user.role === RoleEnum.SUPER_ADMIN) {
+      return true;
+    }
+
+    // Check if the user's role matches any of the required roles
+    return requiredRoles.some((role) => user.role === role);
+  }
 }
