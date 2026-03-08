@@ -1,6 +1,7 @@
 import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { ROLES_KEY } from '../decorators/roles.decorator';
+import { RoleEnum } from '../../common/enums/role.enum';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -21,9 +22,12 @@ export class RolesGuard implements CanActivate {
             return false;
         }
 
+        // SUPER_ADMIN has access to everything
+        if (user.role === RoleEnum.SUPER_ADMIN) {
+            return true;
+        }
+
         // Check if the user's role matches any of the required roles
-        // user.role.name assumes that user role is fetched and populated, or we store role name in JWT.
-        // Assuming user.role is a string for simplicity, or adapt to entity structure.
-        return requiredRoles.some((role) => user.role === role || user.role?.name === role);
+        return requiredRoles.some((role) => user.role === role);
     }
 }
