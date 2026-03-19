@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { SanctionedEntityRepository } from './sanctioned-entity.repository';
 import { CreateSanctionedEntityDto } from './dto/create-sanctioned-entity.dto';
 import { UpdateSanctionedEntityDto } from './dto/update-sanctioned-entity.dto';
@@ -10,22 +10,40 @@ export class SanctionedEntityService {
   ) {}
 
   create(createSanctionedEntityDto: CreateSanctionedEntityDto) {
-    return 'This action adds a new sanctionedEntity';
+    const entity = this.sanctionedEntityRepository.create(
+      createSanctionedEntityDto,
+    );
+    return this.sanctionedEntityRepository.save(entity);
   }
 
   findAll() {
-    return `This action returns all sanctionedEntity`;
+    return this.sanctionedEntityRepository.find();
   }
 
-  findOne(id: string) {
-    return `This action returns a #sanctionedEntity id`;
+  async findOne(id: string) {
+    const entity = await this.sanctionedEntityRepository.findOne({
+      where: { id },
+    });
+    if (!entity) {
+      throw new NotFoundException('Sanctioned entity not found');
+    }
+    return entity;
   }
 
-  update(id: string, updateSanctionedEntityDto: UpdateSanctionedEntityDto) {
-    return `This action updates a #sanctionedEntity id`;
+  async update(id: string, updateSanctionedEntityDto: UpdateSanctionedEntityDto) {
+    const entity = await this.sanctionedEntityRepository.preload({
+      id,
+      ...updateSanctionedEntityDto,
+    });
+    if (!entity) {
+      throw new NotFoundException('Sanctioned entity not found');
+    }
+    return this.sanctionedEntityRepository.save(entity);
   }
 
-  remove(id: string) {
-    return `This action removes a #sanctionedEntity id`;
+  async remove(id: string) {
+    const entity = await this.findOne(id);
+    await this.sanctionedEntityRepository.remove(entity);
+    return { deleted: true };
   }
 }
