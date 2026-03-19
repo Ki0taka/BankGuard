@@ -4,9 +4,11 @@ import {
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  OneToMany,
 } from 'typeorm';
 import { BlacklistStatusEnum } from '../../common/enums/blacklist-status.enum';
 import { getEncryptionTransformer } from '../../common/encryption/encryption.singleton';
+import { EvidenceDocument } from '../../evidence-document/entities/evidence-document.entity';
 
 const encryptionTransformer = getEncryptionTransformer();
 
@@ -45,4 +47,10 @@ export class SanctionedEntity {
 
   @UpdateDateColumn()
   updatedAt: Date;
+
+  @OneToMany(
+    () => EvidenceDocument,
+    (evidenceDocument) => evidenceDocument.sanctionedEntity,
+  )
+  evidenceDocuments: EvidenceDocument[];
 }

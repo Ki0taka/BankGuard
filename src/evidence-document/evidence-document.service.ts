@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { EvidenceDocumentRepository } from './evidence-document.repository';
 import { CreateEvidenceDocumentDto } from './dto/create-evidence-document.dto';
 import { UpdateEvidenceDocumentDto } from './dto/update-evidence-document.dto';
@@ -10,22 +10,39 @@ export class EvidenceDocumentService {
   ) {}
 
   create(createEvidenceDocumentDto: CreateEvidenceDocumentDto) {
-    return 'This action adds a new evidenceDocument';
+    const document =
+      this.evidenceDocumentRepository.create(createEvidenceDocumentDto);
+    return this.evidenceDocumentRepository.save(document);
   }
 
   findAll() {
-    return `This action returns all evidenceDocument`;
+    return this.evidenceDocumentRepository.find();
   }
 
-  findOne(id: string) {
-    return `This action returns a #evidenceDocument id`;
+  async findOne(id: string) {
+    const document = await this.evidenceDocumentRepository.findOne({
+      where: { id },
+    });
+    if (!document) {
+      throw new NotFoundException('Evidence document not found');
+    }
+    return document;
   }
 
-  update(id: string, updateEvidenceDocumentDto: UpdateEvidenceDocumentDto) {
-    return `This action updates a #evidenceDocument id`;
+  async update(id: string, updateEvidenceDocumentDto: UpdateEvidenceDocumentDto) {
+    const document = await this.evidenceDocumentRepository.preload({
+      id,
+      ...updateEvidenceDocumentDto,
+    });
+    if (!document) {
+      throw new NotFoundException('Evidence document not found');
+    }
+    return this.evidenceDocumentRepository.save(document);
   }
 
-  remove(id: string) {
-    return `This action removes a #evidenceDocument id`;
+  async remove(id: string) {
+    const document = await this.findOne(id);
+    await this.evidenceDocumentRepository.remove(document);
+    return { deleted: true };
   }
 }
