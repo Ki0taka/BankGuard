@@ -28,6 +28,7 @@ import { SyncedEntityModule } from './synced-entity/synced-entity.module';
 import { AuditLogModule } from './audit-log/audit-log.module';
 import { AggregateSnapshotModule } from './aggregate-snapshot/aggregate-snapshot.module';
 import { DatabaseModule } from './database/database.module';
+import { ReviewModule } from './review/review.module';
 
 @Module({
   imports: [
@@ -78,6 +79,7 @@ import { DatabaseModule } from './database/database.module';
     AuditLogModule,
     AggregateSnapshotModule,
     DatabaseModule,
+    ReviewModule,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -8,22 +8,27 @@ export class AuditLogService {
   constructor(private readonly auditLogRepository: AuditLogRepository) {}
 
   create(createAuditLogDto: CreateAuditLogDto) {
-    return 'This action adds a new auditLog';
+    const log = this.auditLogRepository.create(createAuditLogDto);
+    return this.auditLogRepository.save(log);
   }
 
   findAll() {
-    return `This action returns all auditLog`;
+    return this.auditLogRepository.find({ order: { createdAt: 'DESC' } });
   }
 
   findOne(id: string) {
-    return `This action returns a #auditLog id`;
+    return this.auditLogRepository.findOne({ where: { id } });
   }
 
   update(id: string, updateAuditLogDto: UpdateAuditLogDto) {
-    return `This action updates a #auditLog id`;
+    return this.auditLogRepository.save({ id, ...updateAuditLogDto });
   }
 
   remove(id: string) {
-    return `This action removes a #auditLog id`;
+    return this.auditLogRepository.delete(id);
+  }
+
+  log(entry: CreateAuditLogDto) {
+    return this.create(entry);
   }
 }

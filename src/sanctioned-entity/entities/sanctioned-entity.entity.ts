@@ -9,6 +9,7 @@ import {
 import { BlacklistStatusEnum } from '../../common/enums/blacklist-status.enum';
 import { getEncryptionTransformer } from '../../common/encryption/encryption.singleton';
 import { EvidenceDocument } from '../../evidence-document/entities/evidence-document.entity';
+import { Review } from '../../review/entities/review.entity';
 
 const encryptionTransformer = getEncryptionTransformer();
 
@@ -53,4 +54,7 @@ export class SanctionedEntity {
     (evidenceDocument) => evidenceDocument.sanctionedEntity,
   )
   evidenceDocuments: EvidenceDocument[];
+
+  @OneToMany(() => Review, (review) => review.sanctionedEntity)
+  reviews: Review[];
 }
