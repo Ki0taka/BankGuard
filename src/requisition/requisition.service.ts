@@ -51,7 +51,7 @@ export class RequisitionService {
       action: AuditActionEnum.ENTITY_UPDATED,
       entityType: 'Requisition',
       entityId: saved.id,
-      metadata: updateRequisitionDto,
+      metadata: updateRequisitionDto as Record<string, unknown>,
     });
     return saved;
   }

@@ -55,7 +55,7 @@ export class OrganizationProfileService {
       action: AuditActionEnum.ENTITY_UPDATED,
       entityType: 'OrganizationProfile',
       entityId: saved.id,
-      metadata: updateOrganizationProfileDto,
+      metadata: updateOrganizationProfileDto as Record<string, unknown>,
     });
     return saved;
   }

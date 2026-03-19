@@ -51,7 +51,7 @@ export class EntityAddressService {
       action: AuditActionEnum.ENTITY_UPDATED,
       entityType: 'EntityAddress',
       entityId: saved.id,
-      metadata: updateEntityAddressDto,
+      metadata: updateEntityAddressDto as Record<string, unknown>,
     });
     return saved;
   }

@@ -52,7 +52,7 @@ export class VesselProfileService {
       action: AuditActionEnum.ENTITY_UPDATED,
       entityType: 'VesselProfile',
       entityId: saved.id,
-      metadata: updateVesselProfileDto,
+      metadata: updateVesselProfileDto as Record<string, unknown>,
     });
     return saved;
   }

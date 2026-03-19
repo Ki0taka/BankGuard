@@ -55,7 +55,7 @@ export class IndividualProfileService {
       action: AuditActionEnum.ENTITY_UPDATED,
       entityType: 'IndividualProfile',
       entityId: saved.id,
-      metadata: updateIndividualProfileDto,
+      metadata: updateIndividualProfileDto as Record<string, unknown>,
     });
     return saved;
   }

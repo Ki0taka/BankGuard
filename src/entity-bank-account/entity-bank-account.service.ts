@@ -55,7 +55,7 @@ export class EntityBankAccountService {
       action: AuditActionEnum.ENTITY_UPDATED,
       entityType: 'EntityBankAccount',
       entityId: saved.id,
-      metadata: updateEntityBankAccountDto,
+      metadata: updateEntityBankAccountDto as Record<string, unknown>,
     });
     return saved;
   }

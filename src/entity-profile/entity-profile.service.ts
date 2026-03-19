@@ -51,7 +51,7 @@ export class EntityProfileService {
       action: AuditActionEnum.ENTITY_UPDATED,
       entityType: 'EntityProfile',
       entityId: saved.id,
-      metadata: updateEntityProfileDto,
+      metadata: updateEntityProfileDto as Record<string, unknown>,
     });
     return saved;
   }

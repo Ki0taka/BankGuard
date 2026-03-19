@@ -51,7 +51,7 @@ export class EntityStatusService {
       action: AuditActionEnum.ENTITY_UPDATED,
       entityType: 'EntityStatus',
       entityId: saved.id,
-      metadata: updateEntityStatusDto,
+      metadata: updateEntityStatusDto as Record<string, unknown>,
     });
     return saved;
   }

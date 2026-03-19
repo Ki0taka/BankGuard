@@ -57,7 +57,7 @@ export class AggregateSnapshotService {
       action: AuditActionEnum.ENTITY_UPDATED,
       entityType: 'AggregateSnapshot',
       entityId: saved.id,
-      metadata: updateAggregateSnapshotDto,
+      metadata: updateAggregateSnapshotDto as Record<string, unknown>,
     });
     return saved;
   }

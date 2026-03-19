@@ -49,7 +49,7 @@ export class EntityNameService {
       action: AuditActionEnum.ENTITY_UPDATED,
       entityType: 'EntityName',
       entityId: saved.id,
-      metadata: updateEntityNameDto,
+      metadata: updateEntityNameDto as Record<string, unknown>,
     });
     return saved;
   }

@@ -55,7 +55,7 @@ export class EntityDateOfBirthService {
       action: AuditActionEnum.ENTITY_UPDATED,
       entityType: 'EntityDateOfBirth',
       entityId: saved.id,
-      metadata: updateEntityDateOfBirthDto,
+      metadata: updateEntityDateOfBirthDto as Record<string, unknown>,
     });
     return saved;
   }
