@@ -1,31 +1,70 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { EntityProfileRepository } from './entity-profile.repository';
 import { CreateEntityProfileDto } from './dto/create-entity-profile.dto';
 import { UpdateEntityProfileDto } from './dto/update-entity-profile.dto';
+import { AuditLogService } from '../audit-log/audit-log.service';
+import { AuditActionEnum } from '../common/enums/audit-action.enum';
 
 @Injectable()
 export class EntityProfileService {
   constructor(
     private readonly entityProfileRepository: EntityProfileRepository,
+    private readonly auditLogService: AuditLogService,
   ) {}
 
-  create(createEntityProfileDto: CreateEntityProfileDto) {
-    return 'This action adds a new entityProfile';
+  async create(createEntityProfileDto: CreateEntityProfileDto) {
+    const profile = this.entityProfileRepository.create(createEntityProfileDto);
+    const saved = await this.entityProfileRepository.save(profile);
+    await this.auditLogService.log({
+      action: AuditActionEnum.ENTITY_CREATED,
+      entityType: 'EntityProfile',
+      entityId: saved.id,
+      metadata: { sanctionedEntityId: saved.sanctionedEntityId },
+    });
+    return saved;
   }
 
   findAll() {
-    return `This action returns all entityProfile`;
+    return this.entityProfileRepository.find();
   }
 
-  findOne(id: string) {
-    return `This action returns a #entityProfile id`;
+  async findOne(id: string) {
+    const profile = await this.entityProfileRepository.findOne({
+      where: { id },
+    });
+    if (!profile) {
+      throw new NotFoundException('Entity profile not found');
+    }
+    return profile;
   }
 
-  update(id: string, updateEntityProfileDto: UpdateEntityProfileDto) {
-    return `This action updates a #entityProfile id`;
+  async update(id: string, updateEntityProfileDto: UpdateEntityProfileDto) {
+    const profile = await this.entityProfileRepository.preload({
+      id,
+      ...updateEntityProfileDto,
+    });
+    if (!profile) {
+      throw new NotFoundException('Entity profile not found');
+    }
+    const saved = await this.entityProfileRepository.save(profile);
+    await this.auditLogService.log({
+      action: AuditActionEnum.ENTITY_UPDATED,
+      entityType: 'EntityProfile',
+      entityId: saved.id,
+      metadata: updateEntityProfileDto,
+    });
+    return saved;
   }
 
-  remove(id: string) {
-    return `This action removes a #entityProfile id`;
+  async remove(id: string) {
+    const profile = await this.findOne(id);
+    await this.entityProfileRepository.remove(profile);
+    await this.auditLogService.log({
+      action: AuditActionEnum.ENTITY_REMOVED,
+      entityType: 'EntityProfile',
+      entityId: profile.id,
+      metadata: { sanctionedEntityId: profile.sanctionedEntityId },
+    });
+    return { deleted: true };
   }
 }

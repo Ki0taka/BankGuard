@@ -5,11 +5,13 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToMany,
+  OneToOne,
 } from 'typeorm';
 import { BlacklistStatusEnum } from '../../common/enums/blacklist-status.enum';
 import { getEncryptionTransformer } from '../../common/encryption/encryption.singleton';
 import { EvidenceDocument } from '../../evidence-document/entities/evidence-document.entity';
 import { Review } from '../../review/entities/review.entity';
+import { EntityProfile } from '../../entity-profile/entities/entity-profile.entity';
 
 const encryptionTransformer = getEncryptionTransformer();
 
@@ -57,4 +59,10 @@ export class SanctionedEntity {
 
   @OneToMany(() => Review, (review) => review.sanctionedEntity)
   reviews: Review[];
+
+  @OneToOne(
+    () => EntityProfile,
+    (entityProfile) => entityProfile.sanctionedEntity,
+  )
+  entityProfile?: EntityProfile;
 }

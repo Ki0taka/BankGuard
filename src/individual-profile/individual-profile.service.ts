@@ -1,31 +1,74 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { IndividualProfileRepository } from './individual-profile.repository';
 import { CreateIndividualProfileDto } from './dto/create-individual-profile.dto';
 import { UpdateIndividualProfileDto } from './dto/update-individual-profile.dto';
+import { AuditLogService } from '../audit-log/audit-log.service';
+import { AuditActionEnum } from '../common/enums/audit-action.enum';
 
 @Injectable()
 export class IndividualProfileService {
   constructor(
     private readonly individualProfileRepository: IndividualProfileRepository,
+    private readonly auditLogService: AuditLogService,
   ) {}
 
-  create(createIndividualProfileDto: CreateIndividualProfileDto) {
-    return 'This action adds a new individualProfile';
+  async create(createIndividualProfileDto: CreateIndividualProfileDto) {
+    const profile =
+      this.individualProfileRepository.create(createIndividualProfileDto);
+    const saved = await this.individualProfileRepository.save(profile);
+    await this.auditLogService.log({
+      action: AuditActionEnum.ENTITY_CREATED,
+      entityType: 'IndividualProfile',
+      entityId: saved.id,
+      metadata: { entityProfileId: saved.entityProfileId },
+    });
+    return saved;
   }
 
   findAll() {
-    return `This action returns all individualProfile`;
+    return this.individualProfileRepository.find();
   }
 
-  findOne(id: string) {
-    return `This action returns a #individualProfile id`;
+  async findOne(id: string) {
+    const profile = await this.individualProfileRepository.findOne({
+      where: { id },
+    });
+    if (!profile) {
+      throw new NotFoundException('Individual profile not found');
+    }
+    return profile;
   }
 
-  update(id: string, updateIndividualProfileDto: UpdateIndividualProfileDto) {
-    return `This action updates a #individualProfile id`;
+  async update(
+    id: string,
+    updateIndividualProfileDto: UpdateIndividualProfileDto,
+  ) {
+    const profile = await this.individualProfileRepository.preload({
+      id,
+      ...updateIndividualProfileDto,
+    });
+    if (!profile) {
+      throw new NotFoundException('Individual profile not found');
+    }
+    const saved = await this.individualProfileRepository.save(profile);
+    await this.auditLogService.log({
+      action: AuditActionEnum.ENTITY_UPDATED,
+      entityType: 'IndividualProfile',
+      entityId: saved.id,
+      metadata: updateIndividualProfileDto,
+    });
+    return saved;
   }
 
-  remove(id: string) {
-    return `This action removes a #individualProfile id`;
+  async remove(id: string) {
+    const profile = await this.findOne(id);
+    await this.individualProfileRepository.remove(profile);
+    await this.auditLogService.log({
+      action: AuditActionEnum.ENTITY_REMOVED,
+      entityType: 'IndividualProfile',
+      entityId: profile.id,
+      metadata: { entityProfileId: profile.entityProfileId },
+    });
+    return { deleted: true };
   }
 }

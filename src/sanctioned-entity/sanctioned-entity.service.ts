@@ -9,19 +9,25 @@ import { UpdateSanctionedEntityDto } from './dto/update-sanctioned-entity.dto';
 import { BlacklistStatusEnum } from '../common/enums/blacklist-status.enum';
 import { AuditLogService } from '../audit-log/audit-log.service';
 import { AuditActionEnum } from '../common/enums/audit-action.enum';
+import { EntityProfileService } from '../entity-profile/entity-profile.service';
+import { EntityTypeEnum } from '../common/enums/entity-type.enum';
 
 @Injectable()
 export class SanctionedEntityService {
   constructor(
     private readonly sanctionedEntityRepository: SanctionedEntityRepository,
     private readonly auditLogService: AuditLogService,
+    private readonly entityProfileService: EntityProfileService,
   ) {}
 
   async create(createSanctionedEntityDto: CreateSanctionedEntityDto) {
-    const entity = this.sanctionedEntityRepository.create(
-      createSanctionedEntityDto,
-    );
+    const { entityType, ...payload } = createSanctionedEntityDto;
+    const entity = this.sanctionedEntityRepository.create(payload);
     const saved = await this.sanctionedEntityRepository.save(entity);
+    await this.entityProfileService.create({
+      sanctionedEntityId: saved.id,
+      entityType: entityType ?? EntityTypeEnum.INDIVIDUAL,
+    });
     await this.auditLogService.log({
       action: AuditActionEnum.SANCTIONED_ENTITY_CREATED,
       entityType: 'SanctionedEntity',

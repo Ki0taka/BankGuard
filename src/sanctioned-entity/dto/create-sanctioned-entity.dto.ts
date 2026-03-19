@@ -7,6 +7,7 @@ import {
   MaxLength,
 } from 'class-validator';
 import { BlacklistStatusEnum } from '../../common/enums/blacklist-status.enum';
+import { EntityTypeEnum } from '../../common/enums/entity-type.enum';
 
 export class CreateSanctionedEntityDto {
   @IsString()
@@ -41,4 +42,8 @@ export class CreateSanctionedEntityDto {
   @IsOptional()
   @IsEnum(BlacklistStatusEnum)
   status?: BlacklistStatusEnum;
+
+  @IsOptional()
+  @IsEnum(EntityTypeEnum)
+  entityType?: EntityTypeEnum;
 }

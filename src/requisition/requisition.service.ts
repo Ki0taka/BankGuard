@@ -1,29 +1,70 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { RequisitionRepository } from './requisition.repository';
 import { CreateRequisitionDto } from './dto/create-requisition.dto';
 import { UpdateRequisitionDto } from './dto/update-requisition.dto';
+import { AuditLogService } from '../audit-log/audit-log.service';
+import { AuditActionEnum } from '../common/enums/audit-action.enum';
 
 @Injectable()
 export class RequisitionService {
-  constructor(private readonly requisitionRepository: RequisitionRepository) {}
+  constructor(
+    private readonly requisitionRepository: RequisitionRepository,
+    private readonly auditLogService: AuditLogService,
+  ) {}
 
-  create(createRequisitionDto: CreateRequisitionDto) {
-    return 'This action adds a new requisition';
+  async create(createRequisitionDto: CreateRequisitionDto) {
+    const requisition = this.requisitionRepository.create(createRequisitionDto);
+    const saved = await this.requisitionRepository.save(requisition);
+    await this.auditLogService.log({
+      action: AuditActionEnum.ENTITY_CREATED,
+      entityType: 'Requisition',
+      entityId: saved.id,
+      metadata: { sanctionedEntityId: saved.sanctionedEntityId },
+    });
+    return saved;
   }
 
   findAll() {
-    return `This action returns all requisition`;
+    return this.requisitionRepository.find();
   }
 
-  findOne(id: string) {
-    return `This action returns a #requisition id`;
+  async findOne(id: string) {
+    const requisition = await this.requisitionRepository.findOne({
+      where: { id },
+    });
+    if (!requisition) {
+      throw new NotFoundException('Requisition not found');
+    }
+    return requisition;
   }
 
-  update(id: string, updateRequisitionDto: UpdateRequisitionDto) {
-    return `This action updates a #requisition id`;
+  async update(id: string, updateRequisitionDto: UpdateRequisitionDto) {
+    const requisition = await this.requisitionRepository.preload({
+      id,
+      ...updateRequisitionDto,
+    });
+    if (!requisition) {
+      throw new NotFoundException('Requisition not found');
+    }
+    const saved = await this.requisitionRepository.save(requisition);
+    await this.auditLogService.log({
+      action: AuditActionEnum.ENTITY_UPDATED,
+      entityType: 'Requisition',
+      entityId: saved.id,
+      metadata: updateRequisitionDto,
+    });
+    return saved;
   }
 
-  remove(id: string) {
-    return `This action removes a #requisition id`;
+  async remove(id: string) {
+    const requisition = await this.findOne(id);
+    await this.requisitionRepository.remove(requisition);
+    await this.auditLogService.log({
+      action: AuditActionEnum.ENTITY_REMOVED,
+      entityType: 'Requisition',
+      entityId: requisition.id,
+      metadata: { sanctionedEntityId: requisition.sanctionedEntityId },
+    });
+    return { deleted: true };
   }
 }

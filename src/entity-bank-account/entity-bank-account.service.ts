@@ -1,31 +1,74 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { EntityBankAccountRepository } from './entity-bank-account.repository';
 import { CreateEntityBankAccountDto } from './dto/create-entity-bank-account.dto';
 import { UpdateEntityBankAccountDto } from './dto/update-entity-bank-account.dto';
+import { AuditLogService } from '../audit-log/audit-log.service';
+import { AuditActionEnum } from '../common/enums/audit-action.enum';
 
 @Injectable()
 export class EntityBankAccountService {
   constructor(
     private readonly entityBankAccountRepository: EntityBankAccountRepository,
+    private readonly auditLogService: AuditLogService,
   ) {}
 
-  create(createEntityBankAccountDto: CreateEntityBankAccountDto) {
-    return 'This action adds a new entityBankAccount';
+  async create(createEntityBankAccountDto: CreateEntityBankAccountDto) {
+    const account =
+      this.entityBankAccountRepository.create(createEntityBankAccountDto);
+    const saved = await this.entityBankAccountRepository.save(account);
+    await this.auditLogService.log({
+      action: AuditActionEnum.ENTITY_CREATED,
+      entityType: 'EntityBankAccount',
+      entityId: saved.id,
+      metadata: { entityProfileId: saved.entityProfileId },
+    });
+    return saved;
   }
 
   findAll() {
-    return `This action returns all entityBankAccount`;
+    return this.entityBankAccountRepository.find();
   }
 
-  findOne(id: string) {
-    return `This action returns a #entityBankAccount id`;
+  async findOne(id: string) {
+    const account = await this.entityBankAccountRepository.findOne({
+      where: { id },
+    });
+    if (!account) {
+      throw new NotFoundException('Entity bank account not found');
+    }
+    return account;
   }
 
-  update(id: string, updateEntityBankAccountDto: UpdateEntityBankAccountDto) {
-    return `This action updates a #entityBankAccount id`;
+  async update(
+    id: string,
+    updateEntityBankAccountDto: UpdateEntityBankAccountDto,
+  ) {
+    const account = await this.entityBankAccountRepository.preload({
+      id,
+      ...updateEntityBankAccountDto,
+    });
+    if (!account) {
+      throw new NotFoundException('Entity bank account not found');
+    }
+    const saved = await this.entityBankAccountRepository.save(account);
+    await this.auditLogService.log({
+      action: AuditActionEnum.ENTITY_UPDATED,
+      entityType: 'EntityBankAccount',
+      entityId: saved.id,
+      metadata: updateEntityBankAccountDto,
+    });
+    return saved;
   }
 
-  remove(id: string) {
-    return `This action removes a #entityBankAccount id`;
+  async remove(id: string) {
+    const account = await this.findOne(id);
+    await this.entityBankAccountRepository.remove(account);
+    await this.auditLogService.log({
+      action: AuditActionEnum.ENTITY_REMOVED,
+      entityType: 'EntityBankAccount',
+      entityId: account.id,
+      metadata: { entityProfileId: account.entityProfileId },
+    });
+    return { deleted: true };
   }
 }
