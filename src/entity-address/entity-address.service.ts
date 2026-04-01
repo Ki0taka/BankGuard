@@ -1,31 +1,70 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { EntityAddressRepository } from './entity-address.repository';
 import { CreateEntityAddressDto } from './dto/create-entity-address.dto';
 import { UpdateEntityAddressDto } from './dto/update-entity-address.dto';
+import { AuditLogService } from '../audit-log/audit-log.service';
+import { AuditActionEnum } from '../common/enums/audit-action.enum';
 
 @Injectable()
 export class EntityAddressService {
   constructor(
     private readonly entityAddressRepository: EntityAddressRepository,
+    private readonly auditLogService: AuditLogService,
   ) {}
 
-  create(createEntityAddressDto: CreateEntityAddressDto) {
-    return 'This action adds a new entityAddress';
+  async create(createEntityAddressDto: CreateEntityAddressDto) {
+    const address = this.entityAddressRepository.create(createEntityAddressDto);
+    const saved = await this.entityAddressRepository.save(address);
+    await this.auditLogService.log({
+      action: AuditActionEnum.ENTITY_CREATED,
+      entityType: 'EntityAddress',
+      entityId: saved.id,
+      metadata: { entityProfileId: saved.entityProfileId },
+    });
+    return saved;
   }
 
   findAll() {
-    return `This action returns all entityAddress`;
+    return this.entityAddressRepository.find();
   }
 
-  findOne(id: string) {
-    return `This action returns a #entityAddress id`;
+  async findOne(id: string) {
+    const address = await this.entityAddressRepository.findOne({
+      where: { id },
+    });
+    if (!address) {
+      throw new NotFoundException('Entity address not found');
+    }
+    return address;
   }
 
-  update(id: string, updateEntityAddressDto: UpdateEntityAddressDto) {
-    return `This action updates a #entityAddress id`;
+  async update(id: string, updateEntityAddressDto: UpdateEntityAddressDto) {
+    const address = await this.entityAddressRepository.preload({
+      id,
+      ...updateEntityAddressDto,
+    });
+    if (!address) {
+      throw new NotFoundException('Entity address not found');
+    }
+    const saved = await this.entityAddressRepository.save(address);
+    await this.auditLogService.log({
+      action: AuditActionEnum.ENTITY_UPDATED,
+      entityType: 'EntityAddress',
+      entityId: saved.id,
+      metadata: updateEntityAddressDto as Record<string, unknown>,
+    });
+    return saved;
   }
 
-  remove(id: string) {
-    return `This action removes a #entityAddress id`;
+  async remove(id: string) {
+    const address = await this.findOne(id);
+    await this.entityAddressRepository.remove(address);
+    await this.auditLogService.log({
+      action: AuditActionEnum.ENTITY_REMOVED,
+      entityType: 'EntityAddress',
+      entityId: address.id,
+      metadata: { entityProfileId: address.entityProfileId },
+    });
+    return { deleted: true };
   }
 }

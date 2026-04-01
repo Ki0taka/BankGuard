@@ -45,6 +45,7 @@ lerna-debug.log*
 # Project notes (local context)
 GEMINI.md
 Project_details.txt
+history.txt
 
 # temp directory
 .temp

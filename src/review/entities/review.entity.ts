@@ -7,45 +7,41 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { OperationEnum } from '../../common/enums/operation.enum';
-import { WorkflowStatusEnum } from '../../common/enums/workflow-status.enum';
+import { ReviewDecisionEnum } from '../../common/enums/review-decision.enum';
 import { SanctionedEntity } from '../../sanctioned-entity/entities/sanctioned-entity.entity';
 import { User } from '../../user/entities/user.entity';
 
-@Entity('requisitions')
-export class Requisition {
+@Entity('reviews')
+export class Review {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
   @Column({ type: 'uuid' })
   sanctionedEntityId: string;
 
-  @ManyToOne(() => SanctionedEntity, { onDelete: 'CASCADE' })
+  @ManyToOne(
+    () => SanctionedEntity,
+    (sanctionedEntity) => sanctionedEntity.reviews,
+    { onDelete: 'CASCADE' },
+  )
   @JoinColumn({ name: 'sanctionedEntityId' })
   sanctionedEntity: SanctionedEntity;
 
-  @Column({ type: 'uuid', nullable: true })
-  requestedById?: string | null;
+  @Column({ type: 'uuid' })
+  reviewerId: string;
 
   @ManyToOne(() => User, { onDelete: 'SET NULL' })
-  @JoinColumn({ name: 'requestedById' })
-  requestedBy?: User | null;
+  @JoinColumn({ name: 'reviewerId' })
+  reviewer: User;
 
   @Column({
     type: 'enum',
-    enum: OperationEnum,
+    enum: ReviewDecisionEnum,
   })
-  operation: OperationEnum;
-
-  @Column({
-    type: 'enum',
-    enum: WorkflowStatusEnum,
-    default: WorkflowStatusEnum.PENDING,
-  })
-  status: WorkflowStatusEnum;
+  decision: ReviewDecisionEnum;
 
   @Column({ type: 'text', nullable: true })
-  reason?: string | null;
+  comment?: string | null;
 
   @CreateDateColumn()
   createdAt: Date;

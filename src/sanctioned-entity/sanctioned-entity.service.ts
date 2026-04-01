@@ -1,31 +1,110 @@
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { SanctionedEntityRepository } from './sanctioned-entity.repository';
 import { CreateSanctionedEntityDto } from './dto/create-sanctioned-entity.dto';
 import { UpdateSanctionedEntityDto } from './dto/update-sanctioned-entity.dto';
+import { BlacklistStatusEnum } from '../common/enums/blacklist-status.enum';
+import { AuditLogService } from '../audit-log/audit-log.service';
+import { AuditActionEnum } from '../common/enums/audit-action.enum';
+import { EntityProfileService } from '../entity-profile/entity-profile.service';
+import { EntityTypeEnum } from '../common/enums/entity-type.enum';
 
 @Injectable()
 export class SanctionedEntityService {
   constructor(
     private readonly sanctionedEntityRepository: SanctionedEntityRepository,
+    private readonly auditLogService: AuditLogService,
+    private readonly entityProfileService: EntityProfileService,
   ) {}
 
-  create(createSanctionedEntityDto: CreateSanctionedEntityDto) {
-    return 'This action adds a new sanctionedEntity';
+  async create(createSanctionedEntityDto: CreateSanctionedEntityDto) {
+    const { entityType, ...payload } = createSanctionedEntityDto;
+    const entity = this.sanctionedEntityRepository.create(payload);
+    const saved = await this.sanctionedEntityRepository.save(entity);
+    await this.entityProfileService.create({
+      sanctionedEntityId: saved.id,
+      entityType: entityType ?? EntityTypeEnum.INDIVIDUAL,
+    });
+    await this.auditLogService.log({
+      action: AuditActionEnum.SANCTIONED_ENTITY_CREATED,
+      entityType: 'SanctionedEntity',
+      entityId: saved.id,
+      metadata: { status: saved.status },
+    });
+    return saved;
   }
 
   findAll() {
-    return `This action returns all sanctionedEntity`;
+    return this.sanctionedEntityRepository.find();
   }
 
-  findOne(id: string) {
-    return `This action returns a #sanctionedEntity id`;
+  async findOne(id: string) {
+    const entity = await this.sanctionedEntityRepository.findOne({
+      where: { id },
+    });
+    if (!entity) {
+      throw new NotFoundException('Sanctioned entity not found');
+    }
+    return entity;
   }
 
-  update(id: string, updateSanctionedEntityDto: UpdateSanctionedEntityDto) {
-    return `This action updates a #sanctionedEntity id`;
+  async update(id: string, updateSanctionedEntityDto: UpdateSanctionedEntityDto) {
+    const entity = await this.findOne(id);
+    const previousStatus = entity.status;
+    const nextStatus = updateSanctionedEntityDto.status;
+    if (nextStatus && nextStatus !== entity.status) {
+      this.assertValidStatusTransition(entity.status, nextStatus);
+    }
+    Object.assign(entity, updateSanctionedEntityDto);
+    const saved = await this.sanctionedEntityRepository.save(entity);
+    if (nextStatus && nextStatus !== previousStatus) {
+      await this.auditLogService.log({
+        action: AuditActionEnum.SANCTIONED_ENTITY_STATUS_CHANGED,
+        entityType: 'SanctionedEntity',
+        entityId: saved.id,
+        before: { status: previousStatus },
+        after: { status: saved.status },
+      });
+    }
+    return saved;
   }
 
-  remove(id: string) {
-    return `This action removes a #sanctionedEntity id`;
+  async remove(id: string) {
+    const entity = await this.findOne(id);
+    await this.sanctionedEntityRepository.remove(entity);
+    await this.auditLogService.log({
+      action: AuditActionEnum.SANCTIONED_ENTITY_REMOVED,
+      entityType: 'SanctionedEntity',
+      entityId: entity.id,
+      metadata: { status: entity.status },
+    });
+    return { deleted: true };
+  }
+
+  private assertValidStatusTransition(
+    current: BlacklistStatusEnum,
+    next: BlacklistStatusEnum,
+  ) {
+    const allowedTransitions: Record<
+      BlacklistStatusEnum,
+      BlacklistStatusEnum[]
+    > = {
+      [BlacklistStatusEnum.PENDING]: [
+        BlacklistStatusEnum.ACTIVE,
+        BlacklistStatusEnum.REMOVED,
+      ],
+      [BlacklistStatusEnum.ACTIVE]: [BlacklistStatusEnum.REMOVED],
+      [BlacklistStatusEnum.REMOVED]: [],
+    };
+
+    const allowed = allowedTransitions[current] || [];
+    if (!allowed.includes(next)) {
+      throw new BadRequestException(
+        `Invalid status transition: ${current} -> ${next}`,
+      );
+    }
   }
 }

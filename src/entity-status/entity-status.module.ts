@@ -4,9 +4,10 @@ import { EntityStatusService } from './entity-status.service';
 import { EntityStatusController } from './entity-status.controller';
 import { EntityStatusRepository } from './entity-status.repository';
 import { EntityStatus } from './entities/entity-status.entity';
+import { AuditLogModule } from '../audit-log/audit-log.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([EntityStatus])],
+  imports: [TypeOrmModule.forFeature([EntityStatus]), AuditLogModule],
   controllers: [EntityStatusController],
   providers: [EntityStatusService, EntityStatusRepository],
   exports: [EntityStatusService, EntityStatusRepository],

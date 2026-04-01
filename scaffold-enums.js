@@ -5,7 +5,7 @@ const enumsDir = path.join(__dirname, 'src', 'common', 'enums');
 fs.mkdirSync(enumsDir, { recursive: true });
 
 const enums = {
-    'role.enum.ts': `export enum RoleEnum {\n  ADMIN = 'ADMIN',\n  ACCOUNTS = 'ACCOUNTS',\n  COMPLIANCE = 'COMPLIANCE',\n  AUDITOR = 'AUDITOR',\n}\n`,
+    'role.enum.ts': `export enum RoleEnum {\n  SUPER_ADMIN = 'SUPER_ADMIN',\n  ADMIN = 'ADMIN',\n  ACCOUNTS = 'ACCOUNTS',\n  COMPLIANCE = 'COMPLIANCE',\n  AUDITOR = 'AUDITOR',\n}\n`,
     'operation.enum.ts': `export enum OperationEnum {\n  GEL = 'GEL',\n  PROLONGATION = 'PROLONGATION',\n  DEMANDE_INFORMATION = 'DEMANDE_INFORMATION',\n}\n`,
     'list-type.enum.ts': `export enum ListTypeEnum {\n  INDCG = 'INDCG',\n  INDCI = 'INDCI',\n}\n`,
     'workflow-status.enum.ts': `export enum WorkflowStatusEnum {\n  PENDING = 'PENDING',\n  APPROVED = 'APPROVED',\n  REJECTED = 'REJECTED',\n}\n`,
