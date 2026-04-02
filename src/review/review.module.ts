@@ -6,12 +6,14 @@ import { ReviewRepository } from './review.repository';
 import { Review } from './entities/review.entity';
 import { SanctionedEntityModule } from '../sanctioned-entity/sanctioned-entity.module';
 import { AuditLogModule } from '../audit-log/audit-log.module';
+import { NotificationModule } from '../notification/notification.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Review]),
     SanctionedEntityModule,
     AuditLogModule,
+    NotificationModule,
   ],
   controllers: [ReviewController],
   providers: [ReviewService, ReviewRepository],

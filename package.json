@@ -17,7 +17,8 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "seed:admin": "ts-node -r tsconfig-paths/register src/scripts/seed-admin.ts"
   },
   "dependencies": {
     "@elastic/elasticsearch": "^9.3.3",
@@ -42,6 +43,8 @@
     "@nestjs/throttler": "^6.5.0",
     "@nestjs/typeorm": "^11.0.0",
     "@nestjs/websockets": "^11.1.15",
+    "@types/multer": "^2.1.0",
+    "@types/nodemailer": "^7.0.11",
     "axios": "^1.13.6",
     "bcrypt": "^6.0.0",
     "bull": "^4.16.5",
@@ -55,13 +58,15 @@
     "cookie-parser": "^1.4.7",
     "csrf-csrf": "^4.0.3",
     "date-fns": "^4.1.0",
+    "emailjs": "^5.0.0",
     "express-rate-limit": "^8.2.1",
     "handlebars": "^4.7.8",
     "helmet": "^8.1.0",
     "ioredis": "^5.10.0",
     "joi": "^18.0.2",
+    "mailtrap": "^4.5.1",
     "multer": "^2.1.0",
-    "nanoid": "^5.1.6",
+    "nanoid": "^5.1.7",
     "nodemailer": "^8.0.1",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
@@ -72,7 +77,8 @@
     "rxjs": "^7.8.2",
     "typeorm": "^0.3.28",
     "typeorm-extension": "^3.9.0",
-    "uuid": "^13.0.0"
+    "uuid": "^13.0.0",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.0.0",

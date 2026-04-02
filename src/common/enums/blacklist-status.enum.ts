@@ -1,5 +1,7 @@
 export enum BlacklistStatusEnum {
   PENDING = 'PENDING',
-  ACTIVE = 'ACTIVE',
-  REMOVED = 'REMOVED',
+  READY = 'READY',
+  VALID = 'VALID',
+  ERRONEOUS = 'ERRONEOUS',
+  PROCESSING = 'PROCESSING',
 }

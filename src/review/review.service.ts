@@ -7,6 +7,7 @@ import { ReviewDecisionEnum } from '../common/enums/review-decision.enum';
 import { BlacklistStatusEnum } from '../common/enums/blacklist-status.enum';
 import { AuditLogService } from '../audit-log/audit-log.service';
 import { AuditActionEnum } from '../common/enums/audit-action.enum';
+import { NotificationService } from '../notification/notification.service';
 
 @Injectable()
 export class ReviewService {
@@ -14,6 +15,7 @@ export class ReviewService {
     private readonly reviewRepository: ReviewRepository,
     private readonly sanctionedEntityService: SanctionedEntityService,
     private readonly auditLogService: AuditLogService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   async create(createReviewDto: CreateReviewDto) {
@@ -37,20 +39,40 @@ export class ReviewService {
 
     if (
       createReviewDto.decision === ReviewDecisionEnum.APPROVED &&
-      sanctionedEntity.status !== BlacklistStatusEnum.ACTIVE
+      sanctionedEntity.status !== BlacklistStatusEnum.VALID
     ) {
       await this.sanctionedEntityService.update(sanctionedEntity.id, {
-        status: BlacklistStatusEnum.ACTIVE,
+        status: BlacklistStatusEnum.VALID,
       });
     }
 
     if (
       createReviewDto.decision === ReviewDecisionEnum.REJECTED &&
-      sanctionedEntity.status !== BlacklistStatusEnum.REMOVED
+      sanctionedEntity.status !== BlacklistStatusEnum.ERRONEOUS
     ) {
       await this.sanctionedEntityService.update(sanctionedEntity.id, {
-        status: BlacklistStatusEnum.REMOVED,
+        status: BlacklistStatusEnum.ERRONEOUS,
       });
+
+      // Notify the creator
+      const targetUserId = sanctionedEntity.createdById || createReviewDto.reviewerId;
+      console.log(`[ReviewService] Triggering notification for user: ${targetUserId} (createdById: ${sanctionedEntity.createdById}, reviewerId: ${createReviewDto.reviewerId})`);
+      
+      if (targetUserId) {
+        try {
+          const notif = await this.notificationService.create({
+            userId: targetUserId,
+            title: 'Batch Rejected',
+            message: `Batch "${sanctionedEntity.source}" was rejected: ${createReviewDto.comment || 'No reason provided.'}${!sanctionedEntity.createdById ? ' (Note: You received this because you are the reviewer and this batch had no owner)' : ''}`,
+            link: `/app/blacklists`,
+          });
+          console.log(`[ReviewService] Notification created successfully in DB with ID: ${notif?.id}`);
+        } catch (err) {
+          console.error(`[ReviewService] Failed to create notification: ${err.message}`);
+        }
+      } else {
+        console.warn(`[ReviewService] Skipping notification: No target user ID found (batch owner and reviewer both null)`);
+      }
     }
 
     return saved;
@@ -83,7 +105,7 @@ export class ReviewService {
 
   async remove(id: string) {
     const review = await this.findOne(id);
-    await this.reviewRepository.remove(review);
+    await this.reviewRepository.softDelete(id);
     return { deleted: true };
   }
 }

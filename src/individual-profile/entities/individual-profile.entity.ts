@@ -40,6 +40,18 @@ export class IndividualProfile {
   @Column({ type: 'text', nullable: true, transformer: encryptionTransformer })
   placeOfBirth?: string | null;
 
+  @Column({ type: 'text', nullable: true, transformer: encryptionTransformer })
+  passportNumber?: string | null;
+
+  @Column({ type: 'text', nullable: true, transformer: encryptionTransformer })
+  passportDetails?: string | null;
+
+  @Column({ type: 'text', nullable: true, transformer: encryptionTransformer })
+  nationalIdNumber?: string | null;
+
+  @Column({ type: 'text', nullable: true, transformer: encryptionTransformer })
+  nationalIdDetails?: string | null;
+
   @CreateDateColumn()
   createdAt: Date;
 

@@ -29,6 +29,7 @@ import { AuditLogModule } from './audit-log/audit-log.module';
 import { AggregateSnapshotModule } from './aggregate-snapshot/aggregate-snapshot.module';
 import { DatabaseModule } from './database/database.module';
 import { ReviewModule } from './review/review.module';
+import { NotificationModule } from './notification/notification.module';
 
 @Module({
   imports: [
@@ -80,6 +81,7 @@ import { ReviewModule } from './review/review.module';
     AggregateSnapshotModule,
     DatabaseModule,
     ReviewModule,
+    NotificationModule,
   ],
   controllers: [AppController],
   providers: [AppService],

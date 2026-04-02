@@ -13,7 +13,10 @@ export class AuditLogService {
   }
 
   findAll() {
-    return this.auditLogRepository.find({ order: { createdAt: 'DESC' } });
+    return this.auditLogRepository.find({ 
+      relations: ['user'],
+      order: { createdAt: 'DESC' } 
+    });
   }
 
   findOne(id: string) {

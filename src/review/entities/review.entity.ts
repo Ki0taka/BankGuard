@@ -6,6 +6,7 @@ import {
   JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  DeleteDateColumn,
 } from 'typeorm';
 import { ReviewDecisionEnum } from '../../common/enums/review-decision.enum';
 import { SanctionedEntity } from '../../sanctioned-entity/entities/sanctioned-entity.entity';
@@ -46,6 +47,6 @@ export class Review {
   @CreateDateColumn()
   createdAt: Date;
 
-  @UpdateDateColumn()
-  updatedAt: Date;
+  @DeleteDateColumn()
+  deletedAt: Date;
 }

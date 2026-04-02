@@ -3,32 +3,15 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
-  IsDateString,
   MaxLength,
+  IsUUID,
+  Allow,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { BlacklistStatusEnum } from '../../common/enums/blacklist-status.enum';
-import { EntityTypeEnum } from '../../common/enums/entity-type.enum';
+import { PartialType } from '@nestjs/swagger';
 
 export class CreateSanctionedEntityDto {
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(300)
-  fullName: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(300)
-  alias?: string;
-
-  @IsOptional()
-  @IsDateString()
-  dateOfBirth?: string;
-
-  @IsOptional()
-  @IsString()
-  @MaxLength(100)
-  nationality?: string;
-
   @IsString()
   @IsNotEmpty()
   @MaxLength(200)
@@ -36,14 +19,46 @@ export class CreateSanctionedEntityDto {
 
   @IsOptional()
   @IsString()
-  @MaxLength(2000)
-  justification?: string;
+  @MaxLength(100)
+  blacklistId?: string;
 
   @IsOptional()
+  @Transform(({ value }) => typeof value === 'string' ? value.toUpperCase() : value)
   @IsEnum(BlacklistStatusEnum)
   status?: BlacklistStatusEnum;
 
   @IsOptional()
-  @IsEnum(EntityTypeEnum)
-  entityType?: EntityTypeEnum;
+  @IsString()
+  date?: string;
+
+  @IsOptional()
+  entriesCount?: number;
+
+  @IsOptional()
+  manualData?: any[];
+
+  @IsOptional()
+  @IsString()
+  version?: string;
+
+  @IsOptional()
+  @IsUUID()
+  createdById?: string;
+
+  // --- SYSTEM FIELDS (Ignored but allowed for round-trips) ---
+  @IsOptional()
+  @Allow()
+  id?: string;
+
+  @IsOptional()
+  @Allow()
+  createdAt?: Date | string;
+
+  @IsOptional()
+  @Allow()
+  updatedAt?: Date | string;
+
+  @IsOptional()
+  @Allow()
+  deletedAt?: Date | string | null;
 }

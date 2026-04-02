@@ -16,7 +16,8 @@ export class CreateAuditLogDto {
   @IsNotEmpty()
   entityType: string;
 
-  @IsUUID()
+  @IsString()
+  @IsNotEmpty()
   entityId: string;
 
   @IsOptional()

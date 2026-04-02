@@ -13,11 +13,11 @@ export class EncryptionTransformer implements ValueTransformer {
     this.encryptionService = encryptionService;
   }
 
-  to(value: string | null): string | null {
-    if (!value) {
-      return value;
+  to(value: any): string | null {
+    if (value === null || value === undefined || value === '') {
+      return null;
     }
-    return this.encryptionService.encrypt(value);
+    return this.encryptionService.encrypt(String(value));
   }
 
   from(value: string | null): string | null {

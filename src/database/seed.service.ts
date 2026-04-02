@@ -1,7 +1,6 @@
 import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
 import { UserRepository } from '../user/user.repository';
 import { RoleEnum } from '../common/enums/role.enum';
-import * as bcrypt from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
 
 @Injectable()
@@ -20,23 +19,18 @@ export class SeedService implements OnApplicationBootstrap {
       'SUPER_ADMIN_EMAIL',
       'superadmin@sims.com',
     );
-    const adminPassword = this.configService.get<string>(
-      'SUPER_ADMIN_PASSWORD',
-      'SuperAdmin123!',
-    );
 
     const existingAdmin = await this.userRepository.findOneBy({
       email: adminEmail,
     });
 
     if (!existingAdmin) {
-      const hashedPassword = await bcrypt.hash(adminPassword, 10);
-
       const superAdmin = this.userRepository.create({
-        name: 'System Root',
+        firstName: 'System',
+        lastName: 'Root',
         email: adminEmail,
-        passwordHash: hashedPassword,
         role: RoleEnum.SUPER_ADMIN,
+        isConfirmed: true,
       });
 
       await this.userRepository.save(superAdmin);

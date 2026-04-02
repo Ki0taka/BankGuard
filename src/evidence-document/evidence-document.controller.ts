@@ -6,7 +6,10 @@ import {
   Patch,
   Param,
   Delete,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { EvidenceDocumentService } from './evidence-document.service';
 import { CreateEvidenceDocumentDto } from './dto/create-evidence-document.dto';
 import { UpdateEvidenceDocumentDto } from './dto/update-evidence-document.dto';
@@ -16,6 +19,15 @@ export class EvidenceDocumentController {
   constructor(
     private readonly evidenceDocumentService: EvidenceDocumentService,
   ) {}
+
+  @Post('upload/:entityId')
+  @UseInterceptors(FileInterceptor('file'))
+  uploadFile(
+    @Param('entityId') entityId: string,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.evidenceDocumentService.handleUpload(entityId, file);
+  }
 
   @Post()
   create(@Body() createEvidenceDocumentDto: CreateEvidenceDocumentDto) {

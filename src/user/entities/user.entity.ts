@@ -13,13 +13,16 @@ export class User {
   id: string;
 
   @Column()
-  name: string;
+  firstName: string;
+
+  @Column()
+  lastName: string;
 
   @Column({ unique: true })
   email: string;
 
-  @Column({ select: false })
-  passwordHash: string;
+  @Column({ nullable: true })
+  phone: string;
 
   @Column({
     type: 'enum',
@@ -27,6 +30,21 @@ export class User {
     default: RoleEnum.COMPLIANCE,
   })
   role: RoleEnum;
+
+  @Column({ default: false })
+  isConfirmed: boolean;
+
+  @Column({ nullable: true, select: false })
+  inviteToken: string;
+
+  @Column({ type: 'timestamp', nullable: true, select: false })
+  inviteTokenExpiry: Date;
+
+  @Column({ nullable: true, select: false })
+  otpCode: string;
+
+  @Column({ type: 'timestamp', nullable: true, select: false })
+  otpExpiry: Date;
 
   @CreateDateColumn()
   createdAt: Date;

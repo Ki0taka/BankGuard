@@ -3,8 +3,11 @@ import {
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
 import { AuditActionEnum } from '../../common/enums/audit-action.enum';
+import { User } from '../../user/entities/user.entity';
 
 @Entity('audit_logs')
 export class AuditLog {
@@ -20,11 +23,15 @@ export class AuditLog {
   @Column({ type: 'text' })
   entityType: string;
 
-  @Column({ type: 'uuid' })
+  @Column({ type: 'text' })
   entityId: string;
 
   @Column({ type: 'uuid', nullable: true })
   actorId?: string | null;
+
+  @ManyToOne(() => User, { nullable: true })
+  @JoinColumn({ name: 'actorId' })
+  user?: User | null;
 
   @Column({ type: 'text', nullable: true })
   actorEmail?: string | null;
