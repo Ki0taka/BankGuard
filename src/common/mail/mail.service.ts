@@ -10,19 +10,52 @@ export class MailService {
   constructor(private configService: ConfigService) {
     this.client = new SMTPClient({
       user: this.configService.get<string>('SMTP_USER'),
-      password: this.configService.get<string>('SMTP_PASS'),
+      password:
+        this.configService.get<string>('SMTP_PASSWORD') ||
+        this.configService.get<string>('SMTP_PASS'),
       host: this.configService.get<string>('SMTP_HOST'),
       port: Number(this.configService.get<number>('SMTP_PORT', 2525)),
       ssl: String(this.configService.get('SMTP_SECURE')) === 'true',
     });
   }
 
+  private getFromAddress() {
+    return (
+      this.configService.get<string>('MAIL_FROM') ||
+      this.configService.get<string>('SMTP_FROM')
+    );
+  }
+
+  private assertSmtpConfig() {
+    const requiredValues = {
+      SMTP_HOST: this.configService.get<string>('SMTP_HOST'),
+      SMTP_PORT: this.configService.get<string>('SMTP_PORT'),
+      SMTP_USER: this.configService.get<string>('SMTP_USER'),
+      SMTP_PASSWORD:
+        this.configService.get<string>('SMTP_PASSWORD') ||
+        this.configService.get<string>('SMTP_PASS'),
+      MAIL_FROM: this.getFromAddress(),
+    };
+
+    const missingKeys = Object.entries(requiredValues)
+      .filter(([, value]) => !value)
+      .map(([key]) => key);
+
+    if (missingKeys.length) {
+      const message = `SMTP configuration is incomplete: ${missingKeys.join(', ')}`;
+      this.logger.error(message);
+      throw new Error(message);
+    }
+  }
+
   private async sendMail(options: { to: string, subject: string, html: string, from?: string }) {
+    this.assertSmtpConfig();
+
     return new Promise((resolve, reject) => {
       this.client.send(
         {
           text: options.html.replace(/<[^>]*>?/gm, ''), // Basic text fallback
-          from: options.from || this.configService.get<string>('SMTP_FROM', 'mohahahamidani1@gmail.com'),
+          from: options.from || this.getFromAddress(),
           to: options.to,
           subject: options.subject,
           attachment: [
