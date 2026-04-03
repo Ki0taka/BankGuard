@@ -1,21 +1,28 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { SMTPClient } from 'emailjs';
+import * as nodemailer from 'nodemailer';
 
 @Injectable()
 export class MailService {
-  private client: SMTPClient;
+  private transporter: nodemailer.Transporter;
   private readonly logger = new Logger(MailService.name);
 
   constructor(private configService: ConfigService) {
-    this.client = new SMTPClient({
-      user: this.configService.get<string>('SMTP_USER'),
-      password:
-        this.configService.get<string>('SMTP_PASSWORD') ||
-        this.configService.get<string>('SMTP_PASS'),
+    const port = Number(this.configService.get<number>('SMTP_PORT', 465));
+    const secure =
+      String(this.configService.get('SMTP_SECURE')).toLowerCase() === 'true' ||
+      port === 465;
+
+    this.transporter = nodemailer.createTransport({
       host: this.configService.get<string>('SMTP_HOST'),
-      port: Number(this.configService.get<number>('SMTP_PORT', 2525)),
-      ssl: String(this.configService.get('SMTP_SECURE')) === 'true',
+      port,
+      secure,
+      auth: {
+        user: this.configService.get<string>('SMTP_USER'),
+        pass:
+          this.configService.get<string>('SMTP_PASSWORD') ||
+          this.configService.get<string>('SMTP_PASS'),
+      },
     });
   }
 
@@ -51,27 +58,22 @@ export class MailService {
   private async sendMail(options: { to: string, subject: string, html: string, from?: string }) {
     this.assertSmtpConfig();
 
-    return new Promise((resolve, reject) => {
-      this.client.send(
-        {
-          text: options.html.replace(/<[^>]*>?/gm, ''), // Basic text fallback
-          from: options.from || this.getFromAddress(),
-          to: options.to,
-          subject: options.subject,
-          attachment: [
-            { data: options.html, alternative: true }
-          ]
-        },
-        (err, message) => {
-          if (err) {
-            this.logger.error(`EmailJS Error: ${err.message}`);
-            return reject(err);
-          }
-          this.logger.log(`Email sent successfully to ${options.to}`);
-          resolve(message);
-        }
-      );
-    });
+    try {
+      const result = await this.transporter.sendMail({
+        from: options.from || this.getFromAddress(),
+        to: options.to,
+        subject: options.subject,
+        text: options.html.replace(/<[^>]*>?/gm, ''),
+        html: options.html,
+      });
+
+      this.logger.log(`Email sent successfully to ${options.to} (${result.messageId})`);
+      return result;
+    } catch (error) {
+      const err = error as Error;
+      this.logger.error(`SMTP send failed: ${err.message}`);
+      throw err;
+    }
   }
 
   async sendInviteEmail(to: string, token: string) {
