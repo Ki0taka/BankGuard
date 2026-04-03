@@ -17,6 +17,13 @@ import { SanctionedEntityService } from './sanctioned-entity.service';
 import { CreateSanctionedEntityDto } from './dto/create-sanctioned-entity.dto';
 import { UpdateSanctionedEntityDto } from './dto/update-sanctioned-entity.dto';
 
+type UploadedFile = {
+  originalname: string;
+  buffer: Buffer;
+  mimetype: string;
+  size: number;
+};
+
 @Controller('sanctioned-entity')
 export class SanctionedEntityController {
   constructor(
@@ -83,7 +90,7 @@ export class SanctionedEntityController {
   @UseGuards(JwtAuthGuard)
   @UseInterceptors(FileInterceptor('file'))
   uploadFile(
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFile() file: UploadedFile,
     @Body() metadata: any,
     @Request() req: any,
   ) {
