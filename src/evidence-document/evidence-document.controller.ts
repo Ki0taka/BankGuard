@@ -14,6 +14,13 @@ import { EvidenceDocumentService } from './evidence-document.service';
 import { CreateEvidenceDocumentDto } from './dto/create-evidence-document.dto';
 import { UpdateEvidenceDocumentDto } from './dto/update-evidence-document.dto';
 
+type UploadedFile = {
+  originalname: string;
+  buffer: Buffer;
+  mimetype: string;
+  size: number;
+};
+
 @Controller('evidence-document')
 export class EvidenceDocumentController {
   constructor(
@@ -24,7 +31,7 @@ export class EvidenceDocumentController {
   @UseInterceptors(FileInterceptor('file'))
   uploadFile(
     @Param('entityId') entityId: string,
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFile() file: UploadedFile,
   ) {
     return this.evidenceDocumentService.handleUpload(entityId, file);
   }

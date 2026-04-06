@@ -5,13 +5,20 @@ import { UpdateEvidenceDocumentDto } from './dto/update-evidence-document.dto';
 import * as fs from 'fs';
 import * as path from 'path';
 
+type UploadedFile = {
+  originalname: string;
+  buffer: Buffer;
+  mimetype: string;
+  size: number;
+};
+
 @Injectable()
 export class EvidenceDocumentService {
   constructor(
     private readonly evidenceDocumentRepository: EvidenceDocumentRepository,
   ) {}
 
-  async handleUpload(entityId: string, file: Express.Multer.File) {
+  async handleUpload(entityId: string, file: UploadedFile) {
     const uploadDir = path.join(__dirname, '..', '..', 'uploads');
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });

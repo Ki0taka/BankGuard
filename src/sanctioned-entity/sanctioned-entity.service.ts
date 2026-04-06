@@ -24,6 +24,13 @@ import { DataSource, EntityManager, Not, IsNull } from 'typeorm';
 import { SanctionedEntityStatusChangedEvent } from '../events/sanctioned-entity-status-changed.event';
 import * as xlsx from 'xlsx';
 
+type UploadedFile = {
+  originalname: string;
+  buffer: Buffer;
+  mimetype: string;
+  size: number;
+};
+
 @Injectable()
 export class SanctionedEntityService {
   private readonly logger = new Logger(SanctionedEntityService.name);
@@ -292,11 +299,22 @@ export class SanctionedEntityService {
   //  BULK — Excel upload & manual batch
   // ─────────────────────────────────────────────────────
 
-  async processExcelUpload(file: Express.Multer.File, metadata: any) {
+  private loadXlsx() {
+    try {
+      return require('xlsx');
+    } catch {
+      throw new BadRequestException(
+        'Excel upload is unavailable because the xlsx package is not installed.',
+      );
+    }
+  }
+
+  async processExcelUpload(file: UploadedFile, metadata: any) {
     if (!file) {
       throw new BadRequestException('No file uploaded');
     }
 
+    const xlsx = this.loadXlsx();
     const workbook = xlsx.read(file.buffer, { type: 'buffer' });
     const sheetName = workbook.SheetNames[0];
     const datasheet = workbook.Sheets[sheetName];
