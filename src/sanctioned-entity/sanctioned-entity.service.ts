@@ -4,6 +4,7 @@ import {
   BadRequestException,
   Logger,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { SanctionedEntityRepository } from './sanctioned-entity.repository';
 import { CreateSanctionedEntityDto } from './dto/create-sanctioned-entity.dto';
 import { UpdateSanctionedEntityDto } from './dto/update-sanctioned-entity.dto';
@@ -20,6 +21,7 @@ import { IndividualProfile } from '../individual-profile/entities/individual-pro
 import { NameTypeEnum } from '../common/enums/name-type.enum';
 import { AddressTypeEnum } from '../common/enums/address-type.enum';
 import { DataSource, EntityManager, Not, IsNull } from 'typeorm';
+import { SanctionedEntityStatusChangedEvent } from '../events/sanctioned-entity-status-changed.event';
 import * as xlsx from 'xlsx';
 
 @Injectable()
@@ -30,6 +32,7 @@ export class SanctionedEntityService {
     private readonly sanctionedEntityRepository: SanctionedEntityRepository,
     private readonly auditLogService: AuditLogService,
     private readonly dataSource: DataSource,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   // ─────────────────────────────────────────────────────
@@ -134,6 +137,16 @@ export class SanctionedEntityService {
         before: { status: previousStatus },
         after: { status: saved.status },
       });
+
+      // Emit Event for Webhooks
+      const statusEvent = new SanctionedEntityStatusChangedEvent();
+      statusEvent.aggregateId = saved.id;
+      statusEvent.aggregateType = 'SanctionedEntity';
+      statusEvent.previousStatus = previousStatus;
+      statusEvent.newStatus = saved.status;
+      statusEvent.occurredAt = new Date();
+      
+      this.eventEmitter.emit('SANCTIONED_ENTITY_STATUS_CHANGED', statusEvent);
     }
     return saved;
   }

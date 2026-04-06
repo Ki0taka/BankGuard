@@ -3,6 +3,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ElasticsearchModule } from '@nestjs/elasticsearch';
 
 import { EncryptionModule } from './common/encryption/encryption.module';
@@ -30,6 +31,7 @@ import { AggregateSnapshotModule } from './aggregate-snapshot/aggregate-snapshot
 import { DatabaseModule } from './database/database.module';
 import { ReviewModule } from './review/review.module';
 import { NotificationModule } from './notification/notification.module';
+import { WebhookModule } from './webhook/webhook.module';
 
 @Module({
   imports: [
@@ -57,6 +59,10 @@ import { NotificationModule } from './notification/notification.module';
       }),
       inject: [ConfigService],
     }),
+    EventEmitterModule.forRoot({
+      wildcard: true,
+      delimiter: '.',
+    }),
     EncryptionModule,
     AuthModule,
     UserModule,
@@ -82,6 +88,7 @@ import { NotificationModule } from './notification/notification.module';
     DatabaseModule,
     ReviewModule,
     NotificationModule,
+    WebhookModule,
   ],
   controllers: [AppController],
   providers: [AppService],
