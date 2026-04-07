@@ -1,4 +1,4 @@
-import { IsString, IsUrl, IsEnum, IsArray, IsOptional, IsBoolean } from 'class-validator';
+import { IsString, IsUrl, IsEnum, IsArray, IsOptional, IsBoolean, IsObject } from 'class-validator';
 
 export class CreateWebhookTargetDto {
   @IsString()
@@ -17,13 +17,18 @@ export class CreateWebhookTargetDto {
 
   @IsArray()
   @IsString({ each: true })
-  eventTypes: string[];
+  @IsOptional()
+  eventTypes?: string[];
 
   @IsOptional()
-  @IsEnum(['JSON', 'XML', 'EXCEL', 'HMT'])
-  format?: 'JSON' | 'XML' | 'EXCEL' | 'HMT';
+  @IsEnum(['JSON', 'XML', 'EXCEL', 'HMT', 'CUSTOM'])
+  format?: 'JSON' | 'XML' | 'EXCEL' | 'HMT' | 'CUSTOM';
 
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+  @IsOptional()
+  @IsObject()
+  mapping?: Record<string, string>;
 }

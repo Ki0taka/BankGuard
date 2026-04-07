@@ -38,11 +38,11 @@ export class WebhookController {
 
   // Manual trigger for a specific batch to a specific target
   @Post('test-delivery')
-  async testDelivery(@Body() body: { batchId: string; targetId: string }) {
+  async testDelivery(@Body() body: { batchId: string; targetId: string; eventType?: string }) {
     const target = await this.webhookService.findTargetById(body.targetId);
     if (!target) throw new Error('Target not found');
     
-    // We can use a special event type for manual tests
-    return this.webhookService.dispatch(body.batchId, 'MANUAL_TEST');
+    // Use the provided eventType or default to MANUAL_TEST
+    return this.webhookService.dispatch(body.batchId, body.eventType || 'MANUAL_TEST');
   }
 }

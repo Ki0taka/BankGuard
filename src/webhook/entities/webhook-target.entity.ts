@@ -26,7 +26,7 @@ export class WebhookTarget {
   @Column({ default: true })
   isActive: boolean;
 
-  @Column({ type: 'simple-array' })
+  @Column({ type: 'simple-array', nullable: true })
   eventTypes: string[];
 
   @Column({ default: 'JSON' })

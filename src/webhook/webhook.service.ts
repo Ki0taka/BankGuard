@@ -52,7 +52,9 @@ export class WebhookService {
     });
 
     const matchingTargets = targets.filter(t => 
-      t.eventTypes.includes(eventType) || t.eventTypes.includes('*')
+      t.eventTypes.includes(eventType) || 
+      t.eventTypes.includes('*') ||
+      eventType === 'MANUAL_TEST' // Allow manual tests to reach all active targets
     );
 
     if (matchingTargets.length === 0) {
@@ -145,6 +147,7 @@ export class WebhookService {
   async getDeliveries(targetId?: string) {
     return this.deliveryRepository.find({
       where: targetId ? { targetId } : {},
+      relations: ['target'],
       order: { createdAt: 'DESC' },
       take: 100,
     });
