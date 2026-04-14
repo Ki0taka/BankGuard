@@ -14,6 +14,7 @@ import {
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { SanctionedEntityService } from './sanctioned-entity.service';
+import { AiExtractionService } from './ai-extraction.service';
 import { CreateSanctionedEntityDto } from './dto/create-sanctioned-entity.dto';
 import { UpdateSanctionedEntityDto } from './dto/update-sanctioned-entity.dto';
 
@@ -28,7 +29,14 @@ type UploadedFile = {
 export class SanctionedEntityController {
   constructor(
     private readonly sanctionedEntityService: SanctionedEntityService,
+    private readonly aiExtractionService: AiExtractionService,
   ) {}
+
+  @Post('extract')
+  @UseGuards(JwtAuthGuard)
+  async extract(@Body() payload: { text: string }) {
+    return this.aiExtractionService.extractEntityInfo(payload.text);
+  }
 
   // ── Batch-level CRUD ──
 
@@ -95,6 +103,13 @@ export class SanctionedEntityController {
     @Request() req: any,
   ) {
     return this.sanctionedEntityService.processExcelUpload(file, { ...metadata, createdById: req.user.id });
+  }
+
+  @Post('import-url')
+  @UseGuards(JwtAuthGuard)
+  importFromUrl(@Body() payload: { url: string } & any, @Request() req: any) {
+    const { url, ...metadata } = payload;
+    return this.sanctionedEntityService.importFromUrl(url, { ...metadata, createdById: req.user.id });
   }
 
   // ── Entry-level CRUD (EntityProfile inside a batch) ──

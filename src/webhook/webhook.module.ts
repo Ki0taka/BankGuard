@@ -8,11 +8,13 @@ import { FormatService } from './format.service';
 import { WebhookTarget } from './entities/webhook-target.entity';
 import { WebhookDelivery } from './entities/webhook-delivery.entity';
 import { SanctionedEntityModule } from '../sanctioned-entity/sanctioned-entity.module';
+import { SystemSettingModule } from '../system-setting/system-setting.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([WebhookTarget, WebhookDelivery]),
-    SanctionedEntityModule, // Need for SanctionedEntityService
+    SanctionedEntityModule,
+    SystemSettingModule,
   ],
   providers: [WebhookService, WebhookListener, EnrichmentService, FormatService],
   controllers: [WebhookController],

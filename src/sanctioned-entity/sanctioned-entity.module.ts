@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { SanctionedEntityService } from './sanctioned-entity.service';
+import { AiExtractionService } from './ai-extraction.service';
 import { SanctionedEntityController } from './sanctioned-entity.controller';
 import { SanctionedEntityRepository } from './sanctioned-entity.repository';
 import { SanctionedEntity } from './entities/sanctioned-entity.entity';
@@ -14,6 +16,7 @@ import { IndividualProfile } from '../individual-profile/entities/individual-pro
 
 @Module({
   imports: [
+    ConfigModule,
     TypeOrmModule.forFeature([
       SanctionedEntity,
       EntityProfile,
@@ -26,7 +29,7 @@ import { IndividualProfile } from '../individual-profile/entities/individual-pro
     EntityProfileModule,
   ],
   controllers: [SanctionedEntityController],
-  providers: [SanctionedEntityService, SanctionedEntityRepository],
+  providers: [SanctionedEntityService, SanctionedEntityRepository, AiExtractionService],
   exports: [SanctionedEntityService, SanctionedEntityRepository],
 })
 export class SanctionedEntityModule {}

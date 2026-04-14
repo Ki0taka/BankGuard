@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, Logger } from '@nestjs/common';
 import { UserRepository } from './user.repository';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -8,6 +8,7 @@ import { addDays, isAfter } from 'date-fns';
 
 @Injectable()
 export class UserService {
+  private readonly logger = new Logger(UserService.name);
   constructor(
     private readonly userRepository: UserRepository,
     private readonly mailService: MailService,
@@ -32,7 +33,11 @@ export class UserService {
     const savedUser = await this.userRepository.save(user);
 
     // Send invitation email
-    await this.mailService.sendInviteEmail(savedUser.email, inviteToken);
+    if (savedUser.email) {
+      await this.mailService.sendInviteEmail(savedUser.email, inviteToken);
+    } else {
+      this.logger.error(`Cannot send invitation email: user ${savedUser.id} has no email`);
+    }
 
     return savedUser;
   }

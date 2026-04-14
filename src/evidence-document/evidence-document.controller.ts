@@ -33,7 +33,17 @@ export class EvidenceDocumentController {
     @Param('entityId') entityId: string,
     @UploadedFile() file: UploadedFile,
   ) {
-    return this.evidenceDocumentService.handleUpload(entityId, file);
+    // Default to profile level as that is the primary use case for diligence
+    return this.evidenceDocumentService.handleUpload(entityId, file, true);
+  }
+
+  @Post('upload/batch/:batchId')
+  @UseInterceptors(FileInterceptor('file'))
+  uploadBatchFile(
+    @Param('batchId') batchId: string,
+    @UploadedFile() file: UploadedFile,
+  ) {
+    return this.evidenceDocumentService.handleUpload(batchId, file, false);
   }
 
   @Post()

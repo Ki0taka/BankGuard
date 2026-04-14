@@ -23,6 +23,10 @@ export class SanctionedEntity {
   @Column({ type: 'text', nullable: true })
   blacklistId?: string | null;
 
+  /** Hash of the original file contents to prevent duplicates */
+  @Column({ type: 'text', nullable: true, unique: true })
+  fileHash?: string | null;
+
   @Column({ type: 'text' })
   source: string;
 

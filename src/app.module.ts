@@ -32,6 +32,7 @@ import { DatabaseModule } from './database/database.module';
 import { ReviewModule } from './review/review.module';
 import { NotificationModule } from './notification/notification.module';
 import { WebhookModule } from './webhook/webhook.module';
+import { SystemSettingModule } from './system-setting/system-setting.module';
 
 @Module({
   imports: [
@@ -48,7 +49,7 @@ import { WebhookModule } from './webhook/webhook.module';
         password: configService.get<string>('DB_PASSWORD'),
         database: configService.get<string>('DB_NAME'),
         autoLoadEntities: true,
-        synchronize: true, // Use migrations in production
+        synchronize: true, // [CRITICAL WARNING] Keep true for local development ONLY. Set to false and use migrations in Production to avoid data loss.
       }),
       inject: [ConfigService],
     }),
@@ -89,6 +90,7 @@ import { WebhookModule } from './webhook/webhook.module';
     ReviewModule,
     NotificationModule,
     WebhookModule,
+    SystemSettingModule,
   ],
   controllers: [AppController],
   providers: [AppService],

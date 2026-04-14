@@ -18,7 +18,11 @@ export class EvidenceDocumentService {
     private readonly evidenceDocumentRepository: EvidenceDocumentRepository,
   ) {}
 
-  async handleUpload(entityId: string, file: UploadedFile) {
+  async handleUpload(
+    entityId: string,
+    file: UploadedFile,
+    isProfileLevel = true,
+  ) {
     const uploadDir = path.join(__dirname, '..', '..', 'uploads');
     if (!fs.existsSync(uploadDir)) {
       fs.mkdirSync(uploadDir, { recursive: true });
@@ -28,10 +32,30 @@ export class EvidenceDocumentService {
     const filePath = path.join(uploadDir, filename);
     fs.writeFileSync(filePath, file.buffer);
 
+    // If it's profile level, entityId is the entityProfileId. 
+    // We should also find the associated sanctionedEntityId (Batch ID).
+    let entityProfileId: string | null = null;
+    let sanctionedEntityId: string = entityId;
+
+    if (isProfileLevel) {
+      entityProfileId = entityId;
+      // Find the entity profile to get the sanctionedEntityId
+      const profile = await this.evidenceDocumentRepository.manager.findOne(
+        'EntityProfile',
+        {
+          where: { id: entityProfileId },
+        },
+      );
+      if (profile) {
+        sanctionedEntityId = (profile as any).sanctionedEntityId;
+      }
+    }
+
     const document = this.evidenceDocumentRepository.create({
       originalName: file.originalname,
       storagePath: `/uploads/${filename}`,
-      sanctionedEntityId: entityId,
+      sanctionedEntityId: sanctionedEntityId,
+      entityProfileId: entityProfileId,
       mimeType: file.mimetype,
       sizeBytes: file.size,
     });
@@ -72,6 +96,20 @@ export class EvidenceDocumentService {
 
   async remove(id: string) {
     const document = await this.findOne(id);
+    
+    // Physical file deletion
+    const uploadDir = path.join(__dirname, '..', '..', 'uploads');
+    const filename = path.basename(document.storagePath);
+    const filePath = path.join(uploadDir, filename);
+    
+    try {
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    } catch (err) {
+      console.error(`Failed to delete physical file: ${filePath}`, err);
+    }
+
     await this.evidenceDocumentRepository.remove(document);
     return { deleted: true };
   }
