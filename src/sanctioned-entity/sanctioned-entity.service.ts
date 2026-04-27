@@ -371,7 +371,8 @@ export class SanctionedEntityService {
       'name', 'fullname', 'alias', 'aka', 'dob', 'nationality', 'country', 
       'birth', 'address', 'addr', 'location', 'group', 'listed', 'source',
       'passport', 'nationalid', 'id_number', 'zip', 'title', 'regime', 'sanction',
-      'other', 'notes', 'registration', 'industry', 'gender', 'type', 'information'
+      'other', 'notes', 'registration', 'industry', 'gender', 'type', 'information',
+      'emetteur', 'requisition', 'operation', 'date', 'client'
     ];
 
     const unrecognized = fileHeaders.filter(header => {
@@ -386,6 +387,8 @@ export class SanctionedEntityService {
     const sequentialId = await this.generateSequentialId();
 
     const saved = await this.dataSource.transaction(async (manager) => {
+      const createdById = (metadata.createdById && metadata.createdById.length > 20) ? metadata.createdById : null;
+
       // 1. Create ONE batch (SanctionedEntity)
       const batch = manager.create(SanctionedEntity, {
         source: String(metadata.source || 'Excel Upload'),
@@ -394,7 +397,7 @@ export class SanctionedEntityService {
         status: (metadata.status || BlacklistStatusEnum.READY) as BlacklistStatusEnum,
         date: new Date().toISOString().split('T')[0],
         entriesCount: rows.length,
-        createdById: metadata.createdById || null,
+        createdById,
       });
       const savedBatch = await manager.save(batch);
 
@@ -439,8 +442,8 @@ export class SanctionedEntityService {
             countryOfBirth: val(row, 'Country of Birth', 'countryOfBirth'),
             addresses: [val(row, 'Address', 'location')],
             groupId: val(row, 'GroupID', 'group_id', 'group_number'),
-            listedOn: this.parseExcelDate(val(row, 'ListedOn', 'Listed On')),
-            otherInfo: val(row, 'OtherInfo', 'Other Information', 'Notes', 'OPERATION', 'Information'),
+            listedOn: this.parseExcelDate(val(row, 'ListedOn', 'Listed On', 'DATE_REQUISITION')),
+            otherInfo: val(row, 'OtherInfo', 'Other Information', 'Notes', 'OPERATION', 'Information', 'EMETTEUR'),
             passportNum: val(row, 'PassportNum', 'Passport Number', 'Passport'),
             nationalId: val(row, 'NationalId', 'National ID', 'ID_Number'),
             // Name parts
@@ -594,6 +597,8 @@ export class SanctionedEntityService {
   async bulkCreate(payload: { source: string; blacklistId?: string; entries: any[]; createdById?: string }) {
     const { source, blacklistId, entries, createdById } = payload;
 
+    const validCreatedById = (createdById && createdById.length > 20) ? createdById : null;
+
     const saved = await this.dataSource.transaction(async (manager) => {
       // 1. Create ONE batch (SanctionedEntity)
       const batch = manager.create(SanctionedEntity, {
@@ -602,7 +607,7 @@ export class SanctionedEntityService {
         status: BlacklistStatusEnum.READY,
         date: new Date().toISOString().split('T')[0],
         entriesCount: entries.length,
-        createdById: createdById || null,
+        createdById: validCreatedById,
       });
       const savedBatch = await manager.save(batch);
 
