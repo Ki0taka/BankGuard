@@ -372,7 +372,7 @@ export class SanctionedEntityService {
       'birth', 'address', 'addr', 'location', 'group', 'listed', 'source',
       'passport', 'nationalid', 'id_number', 'zip', 'title', 'regime', 'sanction',
       'other', 'notes', 'registration', 'industry', 'gender', 'type', 'information',
-      'emetteur', 'requisition', 'operation', 'date', 'client'
+      'emetteur', 'requisition', 'operation', 'date', 'client', 'lieu', 'position', 'language', 'script', 'updated'
     ];
 
     const unrecognized = fileHeaders.filter(header => {
@@ -426,6 +426,11 @@ export class SanctionedEntityService {
             val(row, 'Name 3', 'name3'), val(row, 'Name 4', 'name4'), 
             val(row, 'Name 5', 'name5'), val(row, 'Name 6', 'name6')
           ];
+          
+          if (extractedFullName && !hmtNames[0]) {
+             hmtNames[0] = extractedFullName;
+          }
+          
           const hasAnyName = extractedFullName || hmtNames.some(n => n && String(n).trim());
 
           // Skip rows with no names
@@ -435,10 +440,10 @@ export class SanctionedEntityService {
           const entryPayload = {
             fullName: extractedFullName ? String(extractedFullName) : undefined,
             alias: val(row, 'Alias', 'alias', 'AKA'),
-            dob: this.parseExcelDate(val(row, 'DOB', 'date_of_birth', 'Date of Birth')),
+            dob: this.parseExcelDate(val(row, 'DOB', 'date_of_birth', 'Date of Birth', 'DATE_NAISSANCE')),
             nationality: val(row, 'Nationality', 'country', 'Nationality_1'),
-            placeOfBirth: val(row, 'PlaceOfBirth', 'Place of Birth', 'Town of Birth'),
-            townOfBirth: val(row, 'Town of Birth', 'place_of_birth'),
+            placeOfBirth: val(row, 'PlaceOfBirth', 'Place of Birth', 'Town of Birth', 'LIEU_NAISSANCE'),
+            townOfBirth: val(row, 'Town of Birth', 'place_of_birth', 'LIEU_NAISSANCE'),
             countryOfBirth: val(row, 'Country of Birth', 'countryOfBirth'),
             addresses: [val(row, 'Address', 'location')],
             groupId: val(row, 'GroupID', 'group_id', 'group_number'),
@@ -449,8 +454,11 @@ export class SanctionedEntityService {
             // Name parts
             name1: hmtNames[0], name2: hmtNames[1], name3: hmtNames[2],
             name4: hmtNames[3], name5: hmtNames[4], name6: hmtNames[5],
-            title: val(row, 'Title'),
+            title: val(row, 'Title', 'Position'),
             nameNonLatin: val(row, 'Name Non-Latin Script', 'Name Non-Latin'),
+            nonLatinType: val(row, 'Non-Latin Script Type'),
+            nonLatinLang: val(row, 'Non-Latin Script Language'),
+            lastUpdated: val(row, 'Last Updated'),
             groupType: val(row, 'Group Type', 'TYPE_CLIENT'),
             registrationNumber: val(row, 'RegistrationNumber', 'ID_REQUISITION'),
           };

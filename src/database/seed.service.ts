@@ -17,7 +17,7 @@ export class SeedService implements OnApplicationBootstrap {
   async seedSuperAdmin() {
     const adminEmail = this.configService.get<string>(
       'SUPER_ADMIN_EMAIL',
-      'superadmin@sims.com',
+      'mohahahamidani1@gmail.com',
     );
 
     const existingAdmin = await this.userRepository.findOneBy({
