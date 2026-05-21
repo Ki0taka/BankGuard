@@ -8,7 +8,7 @@ export class CreateWebhookTargetDto {
   @IsString()
   description?: string;
 
-  @IsUrl()
+  @IsUrl({ require_tld: false })
   url: string;
 
   @IsOptional()
