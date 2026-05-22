@@ -606,12 +606,14 @@ export class SanctionedEntityService {
     const { source, blacklistId, entries, createdById } = payload;
 
     const validCreatedById = (createdById && createdById.length > 20) ? createdById : null;
+    const normalizedBlacklistId = blacklistId ? String(blacklistId).trim() : '';
+    const resolvedBlacklistId = normalizedBlacklistId || await this.generateSequentialId();
 
     const saved = await this.dataSource.transaction(async (manager) => {
       // 1. Create ONE batch (SanctionedEntity)
       const batch = manager.create(SanctionedEntity, {
         source: String(source),
-        blacklistId: blacklistId || null,
+        blacklistId: resolvedBlacklistId,
         status: BlacklistStatusEnum.READY,
         date: new Date().toISOString().split('T')[0],
         entriesCount: entries.length,
@@ -636,7 +638,7 @@ export class SanctionedEntityService {
       action: AuditActionEnum.SANCTIONED_ENTITY_CREATED,
       entityType: 'SanctionedEntity',
       entityId: saved.id,
-      metadata: { count: entries.length, source, blacklistId },
+      metadata: { count: entries.length, source, blacklistId: resolvedBlacklistId },
     });
 
     return saved;
