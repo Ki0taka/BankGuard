@@ -1,7 +1,13 @@
-import { Controller, Get, Post, Body, Param, Patch } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Patch, UseGuards } from '@nestjs/common';
 import { SystemSettingService } from './system-setting.service';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { RoleEnum } from '../common/enums/role.enum';
 
 @Controller('system-settings')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(RoleEnum.SUPER_ADMIN, RoleEnum.ADMIN)
 export class SystemSettingController {
   constructor(private readonly service: SystemSettingService) {}
 

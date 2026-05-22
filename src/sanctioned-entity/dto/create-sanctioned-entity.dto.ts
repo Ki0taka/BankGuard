@@ -61,4 +61,8 @@ export class CreateSanctionedEntityDto {
   @IsOptional()
   @Allow()
   deletedAt?: Date | string | null;
+
+  @IsOptional()
+  @Allow()
+  fileHash?: string | null;
 }

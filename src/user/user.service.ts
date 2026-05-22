@@ -58,8 +58,24 @@ export class UserService {
 
   async update(id: string, updateUserDto: UpdateUserDto) {
     const user = await this.findOne(id);
+    
+    if (updateUserDto.email && updateUserDto.email !== user.email) {
+      const existing = await this.userRepository.findOneBy({ email: updateUserDto.email });
+      if (existing) {
+        throw new BadRequestException('Email is already in use by another account');
+      }
+    }
+
     Object.assign(user, updateUserDto);
-    return this.userRepository.save(user);
+    
+    try {
+      return await this.userRepository.save(user);
+    } catch (error: any) {
+      if (error.code === '23505') { // PostgreSQL unique violation error code
+        throw new BadRequestException('Email is already in use by another account');
+      }
+      throw error;
+    }
   }
 
   async remove(id: string) {

@@ -22,7 +22,6 @@ export class CreateReviewDto {
 
   @IsOptional()
   @IsString()
-  @IsNotEmpty()
   @MaxLength(2000)
   comment?: string;
 

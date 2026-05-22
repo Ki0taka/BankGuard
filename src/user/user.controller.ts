@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   UseGuards,
+  Request,
 } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -25,6 +26,18 @@ export class UserController {
   @Roles(RoleEnum.SUPER_ADMIN, RoleEnum.ADMIN)
   create(@Body() createUserDto: CreateUserDto) {
     return this.userService.create(createUserDto);
+  }
+
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  getMe(@Request() req: any) {
+    return this.userService.findOne(req.user.id);
+  }
+
+  @Patch('me')
+  @UseGuards(JwtAuthGuard)
+  updateMe(@Request() req: any, @Body() updateUserDto: UpdateUserDto) {
+    return this.userService.update(req.user.id, updateUserDto);
   }
 
   @Get()

@@ -11,7 +11,15 @@ import { AuditLogService } from './audit-log.service';
 import { CreateAuditLogDto } from './dto/create-audit-log.dto';
 import { UpdateAuditLogDto } from './dto/update-audit-log.dto';
 
+import { UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { RoleEnum } from '../common/enums/role.enum';
+
 @Controller('audit-log')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(RoleEnum.SUPER_ADMIN, RoleEnum.ADMIN)
 export class AuditLogController {
   constructor(private readonly auditLogService: AuditLogService) {}
 

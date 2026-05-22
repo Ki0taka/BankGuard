@@ -1,8 +1,14 @@
-import { Controller, Get, Post, Body, Param, Put, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Put, Delete, Query, UseGuards } from '@nestjs/common';
 import { WebhookService } from './webhook.service';
 import { CreateWebhookTargetDto } from './dto/create-webhook-target.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { RoleEnum } from '../common/enums/role.enum';
 
 @Controller('webhooks')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles(RoleEnum.SUPER_ADMIN, RoleEnum.ADMIN)
 export class WebhookController {
   constructor(private readonly webhookService: WebhookService) {}
 

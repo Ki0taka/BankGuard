@@ -294,7 +294,7 @@ export class SanctionedEntityService {
     }
     Object.assign(profile, {
       fullName: entryData.fullName || profile.fullName,
-      entityType: entryData.entityType || profile.entityType,
+      entityType: entryData.entityType ? this.mapEntityType(entryData.entityType) : profile.entityType,
       nationality: entryData.nationality || profile.nationality,
       dateOfBirth: entryData.dob || profile.dateOfBirth,
       groupId: entryData.groupId || profile.groupId,
@@ -717,7 +717,7 @@ export class SanctionedEntityService {
       fullName,
     };
 
-    const entityType = data.entityType || this.mapGroupType(data.groupType);
+    const entityType = data.entityType ? this.mapEntityType(data.entityType) : this.mapGroupType(data.groupType);
 
     // 1. EntityProfile (the "entry" / person row)
     const profile = manager.create(EntityProfile, {
@@ -800,6 +800,12 @@ export class SanctionedEntityService {
     const incDate = data.incorporationDate;
     const industry = data.industry;
     if (entityType === EntityTypeEnum.ORGANIZATION || regNum || industry) {
+      if (incDate && String(incDate).trim().length > 0) {
+        const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+        if (!dateRegex.test(String(incDate)) || isNaN(Date.parse(String(incDate)))) {
+          throw new BadRequestException(`Invalid date format for incorporationDate: "${incDate}". Expected YYYY-MM-DD.`);
+        }
+      }
       const orgRepo = manager.getRepository('OrganizationProfile'); // Use string lookup to avoid circular ref if not imported
       const orgProfile = manager.create('OrganizationProfile', {
         entityProfileId: savedProfile.id,
@@ -832,6 +838,16 @@ export class SanctionedEntityService {
     }
 
     return savedProfile;
+  }
+
+  /** Map frontend entityType string to EntityTypeEnum */
+  private mapEntityType(entityType?: string): EntityTypeEnum {
+    if (!entityType) return EntityTypeEnum.INDIVIDUAL;
+    const upper = String(entityType).toUpperCase();
+    if (upper === 'IND' || upper === 'INDIVIDUAL') return EntityTypeEnum.INDIVIDUAL;
+    if (upper === 'ORG' || upper.includes('ORGANIZATION') || upper.includes('COMPANY')) return EntityTypeEnum.ORGANIZATION;
+    if (upper === 'VESSEL' || upper.includes('SHIP')) return EntityTypeEnum.VESSEL;
+    return EntityTypeEnum.INDIVIDUAL;
   }
 
   /** Map frontend groupType string to EntityTypeEnum */
