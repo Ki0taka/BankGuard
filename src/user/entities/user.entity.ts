@@ -27,7 +27,7 @@ export class User {
   @Column({
     type: 'enum',
     enum: RoleEnum,
-    default: RoleEnum.COMPLIANCE,
+    default: RoleEnum.DATA_ENTRY,
   })
   role: RoleEnum;
 

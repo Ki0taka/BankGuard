@@ -53,9 +53,10 @@ export class SanctionedEntityService {
   // ─────────────────────────────────────────────────────
 
   async create(dto: CreateSanctionedEntityDto) {
+    const generatedId = await this.generateSequentialId();
     const entity = this.sanctionedEntityRepository.create({
       source: dto.source,
-      blacklistId: dto.blacklistId || null,
+      blacklistId: dto.blacklistId || generatedId,
       status: dto.status ?? BlacklistStatusEnum.READY,
       date: dto.date || new Date().toISOString().split('T')[0],
       entriesCount: 0,
@@ -297,7 +298,7 @@ export class SanctionedEntityService {
       entityType: entryData.entityType ? this.mapEntityType(entryData.entityType) : profile.entityType,
       nationality: entryData.nationality || profile.nationality,
       dateOfBirth: entryData.dob || profile.dateOfBirth,
-      groupId: entryData.groupId || profile.groupId,
+      groupId: entryData.groupId ? (parseInt(String(entryData.groupId), 10) || null) : profile.groupId,
       rawData: { ...(profile.rawData || {}), ...entryData },
     });
     return profileRepo.save(profile);

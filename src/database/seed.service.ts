@@ -15,16 +15,16 @@ export class SeedService implements OnApplicationBootstrap {
   }
 
   async seedSuperAdmin() {
-    const adminEmail = this.configService.get<string>(
-      'SUPER_ADMIN_EMAIL',
-      'mohahahamidani1@gmail.com',
-    );
-
-    const existingAdmin = await this.userRepository.findOneBy({
-      email: adminEmail,
+    const existingAdminCount = await this.userRepository.countBy({
+      role: RoleEnum.SUPER_ADMIN,
     });
 
-    if (!existingAdmin) {
+    if (existingAdminCount === 0) {
+      const adminEmail = this.configService.get<string>(
+        'SUPER_ADMIN_EMAIL',
+        'mohahahamidani1@gmail.com',
+      );
+
       const superAdmin = this.userRepository.create({
         firstName: 'System',
         lastName: 'Root',
@@ -36,7 +36,7 @@ export class SeedService implements OnApplicationBootstrap {
       await this.userRepository.save(superAdmin);
       console.log('✅ SUPER_ADMIN user created successfully.');
     } else {
-      console.log('ℹ️ SUPER_ADMIN user already exists.');
+      console.log(`ℹ️ SUPER_ADMIN already exists (count: ${existingAdminCount}). Skipping creation.`);
     }
   }
 }

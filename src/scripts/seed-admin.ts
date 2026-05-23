@@ -10,20 +10,12 @@ async function bootstrap() {
   const adminEmail = 'mohamidani1@gmail.com';
   
   try {
-    const existing = await userService.findOneBy({ email: adminEmail });
-    if (existing) {
-      console.log(`User ${adminEmail} already exists.`);
-      
-      // Ensure it's confirmed for testing
-      if (!existing.isConfirmed) {
-        await userService.update(existing.id, { isConfirmed: true } as any);
-        console.log(`User ${adminEmail} has been marked as confirmed.`);
-      }
-    } else {
-      // Create a super admin
+    const existingSuperAdmin = await userService.findOneBy({ role: RoleEnum.SUPER_ADMIN });
+
+    if (!existingSuperAdmin) {
       const admin = await userService.create({
         firstName: 'System',
-        lastName: 'Administrator',
+        lastName: 'Root',
         email: adminEmail,
         phone: '+213000000000',
         role: RoleEnum.SUPER_ADMIN,
@@ -38,6 +30,8 @@ async function bootstrap() {
       console.log('Status: Confirmed');
       console.log('Role: SUPER_ADMIN');
       console.log('****************************************');
+    } else {
+      console.log('ℹ️ SUPER_ADMIN user already exists. Skipping creation.');
     }
   } catch (error) {
     console.error('Error seeding admin user:', error);

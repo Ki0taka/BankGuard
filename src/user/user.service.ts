@@ -5,6 +5,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { MailService } from '../common/mail/mail.service';
 import { nanoid } from 'nanoid';
 import { addDays, isAfter } from 'date-fns';
+import { RoleEnum } from '../common/enums/role.enum';
 
 @Injectable()
 export class UserService {
@@ -15,6 +16,10 @@ export class UserService {
   ) {}
 
   async create(createUserDto: CreateUserDto) {
+    if (createUserDto.role === RoleEnum.SUPER_ADMIN) {
+      throw new BadRequestException('Cannot create a user with SUPER_ADMIN role');
+    }
+
     const existing = await this.userRepository.findOneBy({ email: createUserDto.email });
     if (existing) {
       throw new BadRequestException('User already exists');
@@ -57,6 +62,10 @@ export class UserService {
   }
 
   async update(id: string, updateUserDto: UpdateUserDto) {
+    if (updateUserDto.role === RoleEnum.SUPER_ADMIN) {
+      throw new BadRequestException('Cannot assign SUPER_ADMIN role');
+    }
+
     const user = await this.findOne(id);
     
     if (updateUserDto.email && updateUserDto.email !== user.email) {
