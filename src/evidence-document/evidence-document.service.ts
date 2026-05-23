@@ -32,7 +32,7 @@ export class EvidenceDocumentService {
     const filePath = path.join(uploadDir, filename);
     fs.writeFileSync(filePath, file.buffer);
 
-    // If it's profile level, entityId is the entityProfileId. 
+    // If it's profile level, entityId is the entityProfileId.
     // We should also find the associated sanctionedEntityId (Batch ID).
     let entityProfileId: string | null = null;
     let sanctionedEntityId: string = entityId;
@@ -64,8 +64,9 @@ export class EvidenceDocumentService {
   }
 
   create(createEvidenceDocumentDto: CreateEvidenceDocumentDto) {
-    const document =
-      this.evidenceDocumentRepository.create(createEvidenceDocumentDto);
+    const document = this.evidenceDocumentRepository.create(
+      createEvidenceDocumentDto,
+    );
     return this.evidenceDocumentRepository.save(document);
   }
 
@@ -83,7 +84,10 @@ export class EvidenceDocumentService {
     return document;
   }
 
-  async update(id: string, updateEvidenceDocumentDto: UpdateEvidenceDocumentDto) {
+  async update(
+    id: string,
+    updateEvidenceDocumentDto: UpdateEvidenceDocumentDto,
+  ) {
     const document = await this.evidenceDocumentRepository.preload({
       id,
       ...updateEvidenceDocumentDto,
@@ -96,12 +100,12 @@ export class EvidenceDocumentService {
 
   async remove(id: string) {
     const document = await this.findOne(id);
-    
+
     // Physical file deletion
     const uploadDir = path.join(__dirname, '..', '..', 'uploads');
     const filename = path.basename(document.storagePath);
     const filePath = path.join(uploadDir, filename);
-    
+
     try {
       if (fs.existsSync(filePath)) {
         fs.unlinkSync(filePath);

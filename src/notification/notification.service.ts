@@ -14,14 +14,20 @@ export class NotificationService {
   ) {}
 
   async create(createNotificationDto: CreateNotificationDto) {
-    console.log(`[NotificationService] Creating notification in DB for user: ${createNotificationDto.userId}`);
-    const notification = this.notificationRepository.create(createNotificationDto);
+    console.log(
+      `[NotificationService] Creating notification in DB for user: ${createNotificationDto.userId}`,
+    );
+    const notification = this.notificationRepository.create(
+      createNotificationDto,
+    );
     const saved = await this.notificationRepository.save(notification);
-    console.log(`[NotificationService] Notification saved correctly. Emitting WebSocket event...`);
-    
+    console.log(
+      `[NotificationService] Notification saved correctly. Emitting WebSocket event...`,
+    );
+
     // Emit real-time update
     this.notificationGateway.sendNotificationToUser(saved.userId, saved);
-    
+
     return saved;
   }
 
@@ -33,7 +39,9 @@ export class NotificationService {
   }
 
   async markAsRead(id: string) {
-    const notification = await this.notificationRepository.findOne({ where: { id } });
+    const notification = await this.notificationRepository.findOne({
+      where: { id },
+    });
     if (!notification) {
       throw new NotFoundException('Notification not found');
     }
@@ -42,7 +50,10 @@ export class NotificationService {
   }
 
   async markAllAsRead(userId: string) {
-    await this.notificationRepository.update({ userId, isRead: false }, { isRead: true });
+    await this.notificationRepository.update(
+      { userId, isRead: false },
+      { isRead: true },
+    );
     return { success: true };
   }
 }

@@ -13,9 +13,9 @@ export class AuditLogService {
   }
 
   findAll() {
-    return this.auditLogRepository.find({ 
+    return this.auditLogRepository.find({
       relations: ['user'],
-      order: { createdAt: 'DESC' } 
+      order: { createdAt: 'DESC' },
     });
   }
 

@@ -8,9 +8,11 @@ async function bootstrap() {
   const userService = app.get(UserService);
 
   const adminEmail = 'mohamidani1@gmail.com';
-  
+
   try {
-    const existingSuperAdmin = await userService.findOneBy({ role: RoleEnum.SUPER_ADMIN });
+    const existingSuperAdmin = await userService.findOneBy({
+      role: RoleEnum.SUPER_ADMIN,
+    });
 
     if (!existingSuperAdmin) {
       const admin = await userService.create({
@@ -23,7 +25,7 @@ async function bootstrap() {
 
       // Mark as confirmed directly for testing
       await userService.update(admin.id, { isConfirmed: true } as any);
-      
+
       console.log('****************************************');
       console.log('Admin user created successfully!');
       console.log(`Email: ${adminEmail}`);

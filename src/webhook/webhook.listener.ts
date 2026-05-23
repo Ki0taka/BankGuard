@@ -16,18 +16,26 @@ export class WebhookListener {
 
   @OnEvent('SANCTIONED_ENTITY_STATUS_CHANGED')
   async handleStatusChangedEvent(event: SanctionedEntityStatusChangedEvent) {
-    this.logger.debug(`Webhook listener caught event for batch ${event.aggregateId}. New Status: ${event.newStatus}`);
-    
+    this.logger.debug(
+      `Webhook listener caught event for batch ${event.aggregateId}. New Status: ${event.newStatus}`,
+    );
+
     // Check if automatic distribution is enabled
-    const isAutoEnabled = await this.systemSettingService.getAsBoolean('AUTO_DISTRIBUTION_ENABLED');
+    const isAutoEnabled = await this.systemSettingService.getAsBoolean(
+      'AUTO_DISTRIBUTION_ENABLED',
+    );
     if (!isAutoEnabled) {
-      this.logger.log(`Skipping automatic distribution for batch ${event.aggregateId} because it is disabled.`);
+      this.logger.log(
+        `Skipping automatic distribution for batch ${event.aggregateId} because it is disabled.`,
+      );
       return;
     }
 
     // We only trigger webhooks when a batch becomes VALID
     if (event.newStatus === BlacklistStatusEnum.VALID) {
-      this.logger.log(`Batch ${event.aggregateId} is now VALID. Triggering distribution to webhooks...`);
+      this.logger.log(
+        `Batch ${event.aggregateId} is now VALID. Triggering distribution to webhooks...`,
+      );
       await this.webhookService.dispatch(event.aggregateId, 'BATCH_VALIDATED');
     }
   }

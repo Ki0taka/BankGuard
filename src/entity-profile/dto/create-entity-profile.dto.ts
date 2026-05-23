@@ -1,9 +1,4 @@
-import {
-  IsEnum,
-  IsOptional,
-  IsUUID,
-  Allow,
-} from 'class-validator';
+import { IsEnum, IsOptional, IsUUID, Allow } from 'class-validator';
 import { EntityTypeEnum } from '../../common/enums/entity-type.enum';
 import { ListTypeEnum } from '../../common/enums/list-type.enum';
 import { RiskEnum } from '../../common/enums/risk.enum';
@@ -43,7 +38,7 @@ export class CreateEntityProfileDto {
   @IsOptional() @Allow() createdAt?: Date | string;
   @IsOptional() @Allow() updatedAt?: Date | string;
   @IsOptional() @Allow() deletedAt?: Date | string | null;
-  
+
   @IsOptional() @Allow() names?: any[];
   @IsOptional() @Allow() addresses?: any[];
   @IsOptional() @Allow() datesOfBirth?: any[];

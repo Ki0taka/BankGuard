@@ -8,19 +8,25 @@ export class UrlHelper {
 
     // Google Drive: https://drive.google.com/file/d/FILE_ID/view?usp=sharing
     // Direct: https://drive.google.com/uc?export=download&id=FILE_ID
-    const driveMatch = url.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
+    const driveMatch = url.match(
+      /drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/,
+    );
     if (driveMatch && driveMatch[1]) {
       return `https://drive.google.com/uc?export=download&id=${driveMatch[1]}`;
     }
 
     // Google Drive raw link: https://drive.google.com/open?id=FILE_ID
-    const driveOpenMatch = url.match(/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/);
+    const driveOpenMatch = url.match(
+      /drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/,
+    );
     if (driveOpenMatch && driveOpenMatch[1]) {
       return `https://drive.google.com/uc?export=download&id=${driveOpenMatch[1]}`;
     }
 
     // Google Sheets: https://docs.google.com/spreadsheets/d/FILE_ID/edit...
-    const sheetsMatch = url.match(/docs\.google\.com\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);
+    const sheetsMatch = url.match(
+      /docs\.google\.com\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/,
+    );
     if (sheetsMatch && sheetsMatch[1]) {
       return `https://docs.google.com/spreadsheets/d/${sheetsMatch[1]}/export?format=xlsx`;
     }

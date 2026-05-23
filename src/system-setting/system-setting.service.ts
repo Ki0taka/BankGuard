@@ -13,10 +13,18 @@ export class SystemSettingService implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
-    await this.ensureSetting('AUTO_DISTRIBUTION_ENABLED', 'true', 'Enable or disable automatic batch distribution on validation');
+    await this.ensureSetting(
+      'AUTO_DISTRIBUTION_ENABLED',
+      'true',
+      'Enable or disable automatic batch distribution on validation',
+    );
   }
 
-  private async ensureSetting(key: string, defaultValue: string, description: string) {
+  private async ensureSetting(
+    key: string,
+    defaultValue: string,
+    description: string,
+  ) {
     const existing = await this.repository.findOne({ where: { key } });
     if (!existing) {
       await this.repository.save({ key, value: defaultValue, description });

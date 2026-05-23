@@ -12,13 +12,15 @@ export class EnrichmentService {
   async getFullBatch(sanctionedEntityId: string) {
     try {
       this.logger.log(`Enriching data for batch ID: ${sanctionedEntityId}`);
-      
+
       // 1. Get batch metadata
-      const batch = await this.sanctionedEntityService.findOne(sanctionedEntityId);
-      
+      const batch =
+        await this.sanctionedEntityService.findOne(sanctionedEntityId);
+
       // 2. Get all entries (already flattened by SanctionedEntityService)
-      const entries = await this.sanctionedEntityService.getEntries(sanctionedEntityId);
-      
+      const entries =
+        await this.sanctionedEntityService.getEntries(sanctionedEntityId);
+
       return {
         timestamp: new Date().toISOString(),
         batch: {
@@ -33,7 +35,9 @@ export class EnrichmentService {
         entries: entries,
       };
     } catch (error) {
-      this.logger.error(`Failed to enrich batch ${sanctionedEntityId}: ${error.message}`);
+      this.logger.error(
+        `Failed to enrich batch ${sanctionedEntityId}: ${error.message}`,
+      );
       throw error;
     }
   }

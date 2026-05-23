@@ -18,7 +18,9 @@ export class AiExtractionService {
 
   async extractEntityInfo(text: string): Promise<any> {
     if (!this.model) {
-      throw new Error('AI Extraction service is not configured (missing GOOGLE_API_KEY).');
+      throw new Error(
+        'AI Extraction service is not configured (missing GOOGLE_API_KEY).',
+      );
     }
 
     const prompt = `
@@ -52,10 +54,13 @@ export class AiExtractionService {
       const result = await this.model.generateContent(prompt);
       const response = await result.response;
       let jsonStr = response.text();
-      
+
       // Clean up potential markdown formatting
-      jsonStr = jsonStr.replace(/```json/g, '').replace(/```/g, '').trim();
-      
+      jsonStr = jsonStr
+        .replace(/```json/g, '')
+        .replace(/```/g, '')
+        .trim();
+
       return JSON.parse(jsonStr);
     } catch (error) {
       this.logger.error(`AI Extraction failed: ${error.message}`);

@@ -9,18 +9,23 @@ export class MailService {
 
   constructor(private configService: ConfigService) {}
 
-  private async sendMail(templateIdKey: string, params: {
-    to_email: string;
-    subject: string;
-    [key: string]: any;
-  }) {
+  private async sendMail(
+    templateIdKey: string,
+    params: {
+      to_email: string;
+      subject: string;
+      [key: string]: any;
+    },
+  ) {
     const serviceId = this.configService.get<string>('EMAILJS_SERVICE_ID');
     const templateId = this.configService.get<string>(templateIdKey);
     const publicKey = this.configService.get<string>('EMAILJS_PUBLIC_KEY');
     const privateKey = this.configService.get<string>('EMAILJS_PRIVATE_KEY');
 
     if (!params.to_email) {
-      this.logger.error(`Attempted to send email with empty recipient. Template key: ${templateIdKey}`);
+      this.logger.error(
+        `Attempted to send email with empty recipient. Template key: ${templateIdKey}`,
+      );
       throw new Error('The recipient address is empty before sending email');
     }
 
@@ -48,14 +53,20 @@ export class MailService {
           },
         );
 
-        this.logger.log(`Email sent successfully via EmailJS to ${params.to_email} using template ${templateId}`);
+        this.logger.log(
+          `Email sent successfully via EmailJS to ${params.to_email} using template ${templateId}`,
+        );
         return response.data;
       } catch (error) {
         const errorMessage = error.response?.data || error.message;
-        this.logger.warn(`EmailJS push failed for ${params.to_email}; trying SMTP fallback: ${JSON.stringify(errorMessage)}`);
+        this.logger.warn(
+          `EmailJS push failed for ${params.to_email}; trying SMTP fallback: ${JSON.stringify(errorMessage)}`,
+        );
       }
     } else {
-      this.logger.warn(`EmailJS configuration is incomplete. Missing: ${!serviceId ? 'serviceId ' : ''}${!templateId ? 'templateId ' : ''}${!publicKey ? 'publicKey' : ''}. Trying SMTP fallback.`);
+      this.logger.warn(
+        `EmailJS configuration is incomplete. Missing: ${!serviceId ? 'serviceId ' : ''}${!templateId ? 'templateId ' : ''}${!publicKey ? 'publicKey' : ''}. Trying SMTP fallback.`,
+      );
     }
 
     return this.sendViaSmtp(params);
@@ -68,7 +79,8 @@ export class MailService {
   }) {
     const host = this.configService.get<string>('SMTP_HOST');
     const port = Number(this.configService.get<string>('SMTP_PORT') || 465);
-    const secure = this.configService.get<string>('SMTP_SECURE', 'true') === 'true';
+    const secure =
+      this.configService.get<string>('SMTP_SECURE', 'true') === 'true';
     const user = this.configService.get<string>('SMTP_USER');
     const pass = this.configService.get<string>('SMTP_PASSWORD');
     const from = this.configService.get<string>('MAIL_FROM') || user;
@@ -111,7 +123,10 @@ export class MailService {
   }
 
   async sendInviteEmail(to: string, token: string) {
-    const frontendUrl = this.configService.get<string>('FRONTEND_URL', 'http://localhost:5173');
+    const frontendUrl = this.configService.get<string>(
+      'FRONTEND_URL',
+      'http://localhost:5173',
+    );
     const inviteUrl = `${frontendUrl}/confirm-account?token=${token}`;
 
     await this.sendMail('EMAILJS_INVITE_TEMPLATE_ID', {

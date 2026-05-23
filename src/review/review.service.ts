@@ -55,9 +55,12 @@ export class ReviewService {
       });
 
       // Notify the creator
-      const targetUserId = sanctionedEntity.createdById || createReviewDto.reviewerId;
-      console.log(`[ReviewService] Triggering notification for user: ${targetUserId} (createdById: ${sanctionedEntity.createdById}, reviewerId: ${createReviewDto.reviewerId})`);
-      
+      const targetUserId =
+        sanctionedEntity.createdById || createReviewDto.reviewerId;
+      console.log(
+        `[ReviewService] Triggering notification for user: ${targetUserId} (createdById: ${sanctionedEntity.createdById}, reviewerId: ${createReviewDto.reviewerId})`,
+      );
+
       if (targetUserId) {
         try {
           const notif = await this.notificationService.create({
@@ -66,12 +69,18 @@ export class ReviewService {
             message: `Batch "${sanctionedEntity.source}" was rejected: ${createReviewDto.comment || 'No reason provided.'}${!sanctionedEntity.createdById ? ' (Note: You received this because you are the reviewer and this batch had no owner)' : ''}`,
             link: `/app/blacklists`,
           });
-          console.log(`[ReviewService] Notification created successfully in DB with ID: ${notif?.id}`);
+          console.log(
+            `[ReviewService] Notification created successfully in DB with ID: ${notif?.id}`,
+          );
         } catch (err) {
-          console.error(`[ReviewService] Failed to create notification: ${err.message}`);
+          console.error(
+            `[ReviewService] Failed to create notification: ${err.message}`,
+          );
         }
       } else {
-        console.warn(`[ReviewService] Skipping notification: No target user ID found (batch owner and reviewer both null)`);
+        console.warn(
+          `[ReviewService] Skipping notification: No target user ID found (batch owner and reviewer both null)`,
+        );
       }
     }
 

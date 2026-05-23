@@ -27,13 +27,15 @@ import * as xlsx from 'xlsx';
 import axios from 'axios';
 import { UrlHelper } from '../common/utils/url-helper';
 import * as crypto from 'crypto';
+import * as fs from 'fs';
 import { drive_v3, google } from 'googleapis';
 
 type UploadedFile = {
   originalname: string;
-  buffer: Buffer;
+  buffer?: Buffer;
   mimetype: string;
   size: number;
+  path?: string;
 };
 
 @Injectable()
@@ -76,7 +78,7 @@ export class SanctionedEntityService {
   private async generateSequentialId(): Promise<string> {
     const year = new Date().getFullYear();
     const prefix = `BL-${year}-`;
-    
+
     // Find the highest sequence number for the current year
     const lastEntity = await this.sanctionedEntityRepository
       .createQueryBuilder('entity')
@@ -128,17 +130,21 @@ export class SanctionedEntityService {
 
     // Handle manualData sync if provided by the frontend
     if (dto.manualData && Array.isArray(dto.manualData)) {
-      const existingEntries = await this.dataSource.getRepository(EntityProfile).find({
-        where: { sanctionedEntityId: id },
-        select: ['id'],
-      });
+      const existingEntries = await this.dataSource
+        .getRepository(EntityProfile)
+        .find({
+          where: { sanctionedEntityId: id },
+          select: ['id'],
+        });
 
       const manualIdSet = new Set(dto.manualData.map((e: any) => String(e.id)));
       const existingIds = existingEntries.map((e) => e.id);
 
       // 1. Delete removed
-      const toDelete = existingIds.filter(id => !manualIdSet.has(id));
-      console.log(`[Update Batch] Calculated toDelete: ${toDelete.length} entries out of ${existingIds.length} existing.`);
+      const toDelete = existingIds.filter((id) => !manualIdSet.has(id));
+      console.log(
+        `[Update Batch] Calculated toDelete: ${toDelete.length} entries out of ${existingIds.length} existing.`,
+      );
       for (const delId of toDelete) {
         await this.deleteEntry(delId);
       }
@@ -160,8 +166,10 @@ export class SanctionedEntityService {
           skippedCount++;
         }
       }
-      
-      console.log(`[Update Batch] Finished. Added: ${addCount}, Updated: ${updateCount}, Skipped: ${skippedCount}`);
+
+      console.log(
+        `[Update Batch] Finished. Added: ${addCount}, Updated: ${updateCount}, Skipped: ${skippedCount}`,
+      );
       entity.entriesCount = dto.manualData.length;
     }
 
@@ -182,7 +190,7 @@ export class SanctionedEntityService {
       statusEvent.previousStatus = previousStatus;
       statusEvent.newStatus = saved.status;
       statusEvent.occurredAt = new Date();
-      
+
       this.eventEmitter.emit('SANCTIONED_ENTITY_STATUS_CHANGED', statusEvent);
     }
     return saved;
@@ -295,10 +303,14 @@ export class SanctionedEntityService {
     }
     Object.assign(profile, {
       fullName: entryData.fullName || profile.fullName,
-      entityType: entryData.entityType ? this.mapEntityType(entryData.entityType) : profile.entityType,
+      entityType: entryData.entityType
+        ? this.mapEntityType(entryData.entityType)
+        : profile.entityType,
       nationality: entryData.nationality || profile.nationality,
       dateOfBirth: entryData.dob || profile.dateOfBirth,
-      groupId: entryData.groupId ? (parseInt(String(entryData.groupId), 10) || null) : profile.groupId,
+      groupId: entryData.groupId
+        ? parseInt(String(entryData.groupId), 10) || null
+        : profile.groupId,
       rawData: { ...(profile.rawData || {}), ...entryData },
     });
     return profileRepo.save(profile);
@@ -340,22 +352,55 @@ export class SanctionedEntityService {
     }
   }
 
+  private async resolveUploadBuffer(file: UploadedFile): Promise<Buffer> {
+    if (file?.buffer?.length) return file.buffer;
+    if (file?.path) {
+      return fs.promises.readFile(file.path);
+    }
+    throw new BadRequestException('Uploaded file is empty or unreadable.');
+  }
+
   async processExcelUpload(file: UploadedFile, metadata: any) {
     if (!file) {
       throw new BadRequestException('No file uploaded');
     }
 
     const xlsx = this.loadXlsx();
-    const workbook = xlsx.read(file.buffer, { type: 'buffer' });
-    
+    const fileBuffer = await this.resolveUploadBuffer(file);
+    let workbook;
+    try {
+      workbook = xlsx.read(fileBuffer, { type: 'buffer' });
+    } catch (error) {
+      this.logger.error(
+        `Failed to read Excel file: ${error.message}`,
+        error.stack,
+      );
+      throw new BadRequestException('Invalid or unsupported Excel file.');
+    }
+
     // 1. Calculate and verify hash
-    const hash = crypto.createHash('sha256').update(file.buffer).digest('hex');
-    const existing = await this.sanctionedEntityRepository.findOne({ where: { fileHash: hash }});
+    const hash = crypto.createHash('sha256').update(fileBuffer).digest('hex');
+    const existing = await this.sanctionedEntityRepository.findOne({
+      where: { fileHash: hash },
+      withDeleted: true,
+    });
     if (existing) {
-      throw new BadRequestException(`This file has already been uploaded as batch "${existing.blacklistId || existing.id}".`);
+      if (existing.deletedAt) {
+        throw new BadRequestException(
+          `This file has already been uploaded as batch "${existing.blacklistId || existing.id}" (currently archived/deleted). Please restore or permanently delete it first in the Archives tab.`,
+        );
+      }
+      throw new BadRequestException(
+        `This file has already been uploaded as batch "${existing.blacklistId || existing.id}".`,
+      );
     }
 
     const sheetName = workbook.SheetNames[0];
+    if (!sheetName) {
+      throw new BadRequestException(
+        'The uploaded file does not contain any worksheets.',
+      );
+    }
     const datasheet = workbook.Sheets[sheetName];
     const rows: any[] = xlsx.utils.sheet_to_json(datasheet);
 
@@ -366,159 +411,273 @@ export class SanctionedEntityService {
     // 2. Strict Header Lockdown
     const firstRow = rows[0];
     const fileHeaders = Object.keys(firstRow);
-    
+
     // Official Whitelist of supported patterns
     const SUPPORTED_PATTERNS = [
-      'name', 'fullname', 'alias', 'aka', 'dob', 'nationality', 'country', 
-      'birth', 'address', 'addr', 'location', 'group', 'listed', 'source',
-      'passport', 'nationalid', 'id_number', 'zip', 'title', 'regime', 'sanction',
-      'other', 'notes', 'registration', 'industry', 'gender', 'type', 'information',
-      'emetteur', 'requisition', 'operation', 'date', 'client', 'lieu', 'position', 'language', 'script', 'updated'
+      'name',
+      'fullname',
+      'alias',
+      'aka',
+      'dob',
+      'nationality',
+      'country',
+      'birth',
+      'address',
+      'addr',
+      'location',
+      'group',
+      'listed',
+      'source',
+      'passport',
+      'nationalid',
+      'id_number',
+      'zip',
+      'title',
+      'regime',
+      'sanction',
+      'other',
+      'notes',
+      'registration',
+      'industry',
+      'gender',
+      'type',
+      'information',
+      'emetteur',
+      'requisition',
+      'operation',
+      'date',
+      'client',
+      'lieu',
+      'position',
+      'language',
+      'script',
+      'updated',
     ];
 
-    const unrecognized = fileHeaders.filter(header => {
+    const unrecognized = fileHeaders.filter((header) => {
       const norm = header.toLowerCase().replace(/[\s_-]/g, '');
-      return !SUPPORTED_PATTERNS.some(p => norm.includes(p));
+      return !SUPPORTED_PATTERNS.some((p) => norm.includes(p));
     });
 
     if (unrecognized.length > 0) {
-      throw new BadRequestException(`Unrecognized columns found: "${unrecognized.join(', ')}". Please follow the official template.`);
+      throw new BadRequestException(
+        `Unrecognized columns found: "${unrecognized.join(', ')}". Please follow the official template.`,
+      );
     }
 
     const sequentialId = await this.generateSequentialId();
 
-    const saved = await this.dataSource.transaction(async (manager) => {
-      const createdById = (metadata.createdById && metadata.createdById.length > 20) ? metadata.createdById : null;
+    try {
+      const saved = await this.dataSource.transaction(async (manager) => {
+        const createdById =
+          metadata.createdById && metadata.createdById.length > 20
+            ? metadata.createdById
+            : null;
 
-      // 1. Create ONE batch (SanctionedEntity)
-      const batch = manager.create(SanctionedEntity, {
-        source: String(metadata.source || 'Excel Upload'),
-        blacklistId: String(metadata.blacklistId || sequentialId),
-        fileHash: hash,
-        status: (metadata.status || BlacklistStatusEnum.READY) as BlacklistStatusEnum,
-        date: new Date().toISOString().split('T')[0],
-        entriesCount: rows.length,
-        createdById,
-      });
-      const savedBatch = await manager.save(batch);
+        // 1. Create ONE batch (SanctionedEntity)
+        const batch = manager.create(SanctionedEntity, {
+          source: String(metadata.source || 'Excel Upload'),
+          blacklistId: String(metadata.blacklistId || sequentialId),
+          fileHash: hash,
+          status: (metadata.status ||
+            BlacklistStatusEnum.READY) as BlacklistStatusEnum,
+          date: new Date().toISOString().split('T')[0],
+          entriesCount: rows.length,
+          createdById,
+        });
+        const savedBatch = await manager.save(batch);
 
-      // 2. Create N entries (EntityProfiles) inside that batch
-      try {
-        let createdCount = 0;
-        
-        // Helper for fuzzy matching headers (e.g. FULL_NAME -> fullName)
-        const val = (row: any, ...keys: string[]) => {
-          const norm = (s: string) => s.toLowerCase().replace(/[\s_-]/g, '');
-          const rowKeys = Object.keys(row);
-          for (const target of keys) {
-            const targetNorm = norm(target);
-            const foundKey = rowKeys.find(rk => norm(rk) === targetNorm);
-            if (foundKey && row[foundKey] !== undefined && row[foundKey] !== null) {
-               return row[foundKey];
+        // 2. Create N entries (EntityProfiles) inside that batch
+        try {
+          let createdCount = 0;
+
+          // Helper for fuzzy matching headers (e.g. FULL_NAME -> fullName)
+          const val = (row: any, ...keys: string[]) => {
+            const norm = (s: string) => s.toLowerCase().replace(/[\s_-]/g, '');
+            const rowKeys = Object.keys(row);
+            for (const target of keys) {
+              const targetNorm = norm(target);
+              const foundKey = rowKeys.find((rk) => norm(rk) === targetNorm);
+              if (
+                foundKey &&
+                row[foundKey] !== undefined &&
+                row[foundKey] !== null
+              ) {
+                return row[foundKey];
+              }
             }
-          }
-          return null;
-        };
-
-        for (const row of rows) {
-          const extractedFullName = val(row, 'fullName', 'full_name', 'Full Name', 'Name');
-          const hmtNames = [
-            val(row, 'Name 1', 'name1'), val(row, 'Name 2', 'name2'), 
-            val(row, 'Name 3', 'name3'), val(row, 'Name 4', 'name4'), 
-            val(row, 'Name 5', 'name5'), val(row, 'Name 6', 'name6')
-          ];
-          
-          if (extractedFullName && !hmtNames[0]) {
-             hmtNames[0] = extractedFullName;
-          }
-          
-          const hasAnyName = extractedFullName || hmtNames.some(n => n && String(n).trim());
-
-          // Skip rows with no names
-          if (!hasAnyName) continue;
-
-          createdCount++;
-          const entryPayload = {
-            fullName: extractedFullName ? String(extractedFullName) : undefined,
-            alias: val(row, 'Alias', 'alias', 'AKA'),
-            dob: this.parseExcelDate(val(row, 'DOB', 'date_of_birth', 'Date of Birth', 'DATE_NAISSANCE')),
-            nationality: val(row, 'Nationality', 'country', 'Nationality_1'),
-            placeOfBirth: val(row, 'PlaceOfBirth', 'Place of Birth', 'Town of Birth', 'LIEU_NAISSANCE'),
-            townOfBirth: val(row, 'Town of Birth', 'place_of_birth', 'LIEU_NAISSANCE'),
-            countryOfBirth: val(row, 'Country of Birth', 'countryOfBirth'),
-            addresses: [val(row, 'Address', 'location')],
-            groupId: val(row, 'GroupID', 'group_id', 'group_number'),
-            listedOn: this.parseExcelDate(val(row, 'ListedOn', 'Listed On', 'DATE_REQUISITION')),
-            otherInfo: val(row, 'OtherInfo', 'Other Information', 'Notes', 'OPERATION', 'Information', 'EMETTEUR'),
-            passportNum: val(row, 'PassportNum', 'Passport Number', 'Passport'),
-            nationalId: val(row, 'NationalId', 'National ID', 'ID_Number'),
-            // Name parts
-            name1: hmtNames[0], name2: hmtNames[1], name3: hmtNames[2],
-            name4: hmtNames[3], name5: hmtNames[4], name6: hmtNames[5],
-            title: val(row, 'Title', 'Position'),
-            nameNonLatin: val(row, 'Name Non-Latin Script', 'Name Non-Latin'),
-            nonLatinType: val(row, 'Non-Latin Script Type'),
-            nonLatinLang: val(row, 'Non-Latin Script Language'),
-            lastUpdated: val(row, 'Last Updated'),
-            groupType: val(row, 'Group Type', 'TYPE_CLIENT'),
-            registrationNumber: val(row, 'RegistrationNumber', 'ID_REQUISITION'),
+            return null;
           };
 
-          // Data Density Check: Count how many fields we actually found
-          const populatedCount = Object.values(entryPayload).filter(v => v !== null && v !== undefined && String(v).trim().length > 0).length;
-          
-          if (populatedCount < 3) {
-            createdCount--; // roll back count
-            this.logger.warn(`Skipping low-density row: ${extractedFullName || hmtNames[0] || 'Unknown'}`);
-            continue;
+          for (const row of rows) {
+            const extractedFullName = val(
+              row,
+              'fullName',
+              'full_name',
+              'Full Name',
+              'Name',
+            );
+            const hmtNames = [
+              val(row, 'Name 1', 'name1'),
+              val(row, 'Name 2', 'name2'),
+              val(row, 'Name 3', 'name3'),
+              val(row, 'Name 4', 'name4'),
+              val(row, 'Name 5', 'name5'),
+              val(row, 'Name 6', 'name6'),
+            ];
+
+            if (extractedFullName && !hmtNames[0]) {
+              hmtNames[0] = extractedFullName;
+            }
+
+            const hasAnyName =
+              extractedFullName || hmtNames.some((n) => n && String(n).trim());
+
+            // Skip rows with no names
+            if (!hasAnyName) continue;
+
+            createdCount++;
+            const entryPayload = {
+              fullName: extractedFullName ? String(extractedFullName) : undefined,
+              alias: val(row, 'Alias', 'alias', 'AKA'),
+              dob: this.parseExcelDate(
+                val(
+                  row,
+                  'DOB',
+                  'date_of_birth',
+                  'Date of Birth',
+                  'DATE_NAISSANCE',
+                ),
+              ),
+              nationality: val(row, 'Nationality', 'country', 'Nationality_1'),
+              placeOfBirth: val(
+                row,
+                'PlaceOfBirth',
+                'Place of Birth',
+                'Town of Birth',
+                'LIEU_NAISSANCE',
+              ),
+              townOfBirth: val(
+                row,
+                'Town of Birth',
+                'place_of_birth',
+                'LIEU_NAISSANCE',
+              ),
+              countryOfBirth: val(row, 'Country of Birth', 'countryOfBirth'),
+              addresses: [val(row, 'Address', 'location')],
+              groupId: val(row, 'GroupID', 'group_id', 'group_number'),
+              listedOn: this.parseExcelDate(
+                val(row, 'ListedOn', 'Listed On', 'DATE_REQUISITION'),
+              ),
+              otherInfo: val(
+                row,
+                'OtherInfo',
+                'Other Information',
+                'Notes',
+                'OPERATION',
+                'Information',
+                'EMETTEUR',
+              ),
+              passportNum: val(row, 'PassportNum', 'Passport Number', 'Passport'),
+              nationalId: val(row, 'NationalId', 'National ID', 'ID_Number'),
+              // Name parts
+              name1: hmtNames[0],
+              name2: hmtNames[1],
+              name3: hmtNames[2],
+              name4: hmtNames[3],
+              name5: hmtNames[4],
+              name6: hmtNames[5],
+              title: val(row, 'Title', 'Position'),
+              nameNonLatin: val(row, 'Name Non-Latin Script', 'Name Non-Latin'),
+              nonLatinType: val(row, 'Non-Latin Script Type'),
+              nonLatinLang: val(row, 'Non-Latin Script Language'),
+              lastUpdated: val(row, 'Last Updated'),
+              groupType: val(row, 'Group Type', 'TYPE_CLIENT'),
+              registrationNumber: val(
+                row,
+                'RegistrationNumber',
+                'ID_REQUISITION',
+              ),
+            };
+
+            // Data Density Check: Count how many fields we actually found
+            const populatedCount = Object.values(entryPayload).filter(
+              (v) => v !== null && v !== undefined && String(v).trim().length > 0,
+            ).length;
+
+            if (populatedCount < 3) {
+              createdCount--; // roll back count
+              this.logger.warn(
+                `Skipping low-density row: ${extractedFullName || hmtNames[0] || 'Unknown'}`,
+              );
+              continue;
+            }
+
+            await this.createEntryProfile(manager, savedBatch.id, entryPayload);
           }
-          
-          await this.createEntryProfile(manager, savedBatch.id, entryPayload);
-        }
-        
-        if (createdCount === 0) {
-          throw new BadRequestException('The attributes in the file does not match the stuff we have');
+
+          if (createdCount === 0) {
+            throw new BadRequestException(
+              'The attributes in the file does not match the stuff we have',
+            );
+          }
+
+          // Update the actual count of entries created
+          savedBatch.entriesCount = createdCount;
+          await manager.save(savedBatch);
+        } catch (error) {
+          this.logger.error(
+            `Error processing Excel upload: ${error.message}`,
+            error.stack,
+          );
+          throw new BadRequestException(`Excel upload failed: ${error.message}`);
         }
 
-        // Update the actual count of entries created
-        savedBatch.entriesCount = createdCount;
-        await manager.save(savedBatch);
-      } catch (error) {
-        this.logger.error(`Error processing Excel upload: ${error.message}`, error.stack);
-        throw new BadRequestException(`Excel upload failed: ${error.message}`);
+        return savedBatch;
+      });
+
+      await this.auditLogService.log({
+        action: AuditActionEnum.SANCTIONED_ENTITY_CREATED,
+        entityType: 'SanctionedEntity',
+        entityId: saved.id,
+        metadata: { count: saved.entriesCount, source: metadata.source },
+      });
+
+      return saved;
+    } catch (error) {
+      if (error instanceof BadRequestException) {
+        throw error;
       }
-
-      return savedBatch;
-    });
-
-    await this.auditLogService.log({
-      action: AuditActionEnum.SANCTIONED_ENTITY_CREATED,
-      entityType: 'SanctionedEntity',
-      entityId: saved.id,
-      metadata: { count: saved.entriesCount, source: metadata.source },
-    });
-
-    return saved;
+      this.logger.error(
+        `Error processing Excel upload transaction: ${error.message}`,
+        error.stack,
+      );
+      throw new BadRequestException(`Excel upload failed: ${error.message}`);
+    }
   }
 
   async importFromUrl(url: string, metadata: any) {
     try {
       this.logger.log(`Importing blacklist from URL: ${url}`);
-      
+
       // Handle Google Drive Folders
       if (url.includes('drive.google.com/drive/folders/')) {
         return this.handleDriveFolderImport(url, metadata);
       }
 
       const directUrl = UrlHelper.transformToDirectDownload(url);
-      
-      const response = await axios.get(directUrl, { responseType: 'arraybuffer' });
+
+      const response = await axios.get(directUrl, {
+        responseType: 'arraybuffer',
+      });
       const filename = url.split('/').pop() || 'cloud_import.xlsx';
 
       const file: UploadedFile = {
         originalname: filename,
         buffer: Buffer.from(response.data),
-        mimetype: response.headers['content-type'] || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        mimetype:
+          response.headers['content-type'] ||
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         size: response.data.length,
       };
 
@@ -526,22 +685,27 @@ export class SanctionedEntityService {
     } catch (error) {
       this.logger.error(`Failed to import from URL ${url}: ${error.message}`);
       if (error instanceof BadRequestException) throw error;
-      throw new BadRequestException(`Cloud import failed: ${error.message}. Please ensure the URL is public and direct.`);
+      throw new BadRequestException(
+        `Cloud import failed: ${error.message}. Please ensure the URL is public and direct.`,
+      );
     }
   }
 
   private async handleDriveFolderImport(url: string, metadata: any) {
     const folderIdMatch = url.match(/folders\/([a-zA-Z0-9_-]+)/);
-    if (!folderIdMatch) throw new BadRequestException('Invalid Google Drive folder URL');
+    if (!folderIdMatch)
+      throw new BadRequestException('Invalid Google Drive folder URL');
     const folderId = folderIdMatch[1];
 
     const apiKey = this.configService.get<string>('GOOGLE_API_KEY');
     if (!apiKey) {
-      throw new BadRequestException('Google API Key is missing in server configuration. Folder import is unavailable.');
+      throw new BadRequestException(
+        'Google API Key is missing in server configuration. Folder import is unavailable.',
+      );
     }
 
     const drive = google.drive({ version: 'v3', auth: apiKey });
-    
+
     try {
       const res = await drive.files.list({
         q: `'${folderId}' in parents and trashed = false and (
@@ -557,58 +721,91 @@ export class SanctionedEntityService {
 
       const files = res.data.files || [];
       if (files.length === 0) {
-        throw new BadRequestException('No Excel or Google Spreadsheet files found in the provided folder.');
+        throw new BadRequestException(
+          'No Excel or Google Spreadsheet files found in the provided folder.',
+        );
       }
 
-      this.logger.log(`Found ${files.length} files in Drive folder. Starting batch import...`);
-      
+      this.logger.log(
+        `Found ${files.length} files in Drive folder. Starting batch import...`,
+      );
+
       const results = [];
       for (const driveFile of files) {
         try {
           // Export Google Sheets as Excel, or download binary for Excel files
           let mediaResponse;
-          if (driveFile.mimeType === 'application/vnd.google-apps.spreadsheet') {
-            mediaResponse = await drive.files.export({
-              fileId: driveFile.id,
-              mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            }, { responseType: 'arraybuffer' });
+          if (
+            driveFile.mimeType === 'application/vnd.google-apps.spreadsheet'
+          ) {
+            mediaResponse = await drive.files.export(
+              {
+                fileId: driveFile.id,
+                mimeType:
+                  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+              },
+              { responseType: 'arraybuffer' },
+            );
           } else {
-            mediaResponse = await drive.files.get({
-              fileId: driveFile.id,
-              alt: 'media',
-            }, { responseType: 'arraybuffer' });
+            mediaResponse = await drive.files.get(
+              {
+                fileId: driveFile.id,
+                alt: 'media',
+              },
+              { responseType: 'arraybuffer' },
+            );
           }
 
           const file: UploadedFile = {
             originalname: driveFile.name,
             buffer: Buffer.from(mediaResponse.data),
-            mimetype: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            mimetype:
+              'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             size: mediaResponse.data.length,
           };
 
           const saved = await this.processExcelUpload(file, metadata);
-          results.push({ name: driveFile.name, status: 'SUCCESS', id: saved.id });
+          results.push({
+            name: driveFile.name,
+            status: 'SUCCESS',
+            id: saved.id,
+          });
         } catch (err) {
-          this.logger.error(`Failed to import file ${driveFile.name} from folder: ${err.message}`);
-          results.push({ name: driveFile.name, status: 'FAILED', error: err.message });
+          this.logger.error(
+            `Failed to import file ${driveFile.name} from folder: ${err.message}`,
+          );
+          results.push({
+            name: driveFile.name,
+            status: 'FAILED',
+            error: err.message,
+          });
         }
       }
 
       return {
-        message: `Processed folder import: ${results.filter(r => r.status === 'SUCCESS').length} succeeded, ${results.filter(r => r.status === 'FAILED').length} failed.`,
+        message: `Processed folder import: ${results.filter((r) => r.status === 'SUCCESS').length} succeeded, ${results.filter((r) => r.status === 'FAILED').length} failed.`,
         details: results,
       };
     } catch (err) {
-      throw new BadRequestException(`Failed to list Drive folder: ${err.message}`);
+      throw new BadRequestException(
+        `Failed to list Drive folder: ${err.message}`,
+      );
     }
   }
 
-  async bulkCreate(payload: { source: string; blacklistId?: string; entries: any[]; createdById?: string }) {
+  async bulkCreate(payload: {
+    source: string;
+    blacklistId?: string;
+    entries: any[];
+    createdById?: string;
+  }) {
     const { source, blacklistId, entries, createdById } = payload;
 
-    const validCreatedById = (createdById && createdById.length > 20) ? createdById : null;
+    const validCreatedById =
+      createdById && createdById.length > 20 ? createdById : null;
     const normalizedBlacklistId = blacklistId ? String(blacklistId).trim() : '';
-    const resolvedBlacklistId = normalizedBlacklistId || await this.generateSequentialId();
+    const resolvedBlacklistId =
+      normalizedBlacklistId || (await this.generateSequentialId());
 
     const saved = await this.dataSource.transaction(async (manager) => {
       // 1. Create ONE batch (SanctionedEntity)
@@ -628,7 +825,10 @@ export class SanctionedEntityService {
           await this.createEntryProfile(manager, savedBatch.id, entryData);
         }
       } catch (error) {
-        this.logger.error(`Error processing bulk create: ${error.message}`, error.stack);
+        this.logger.error(
+          `Error processing bulk create: ${error.message}`,
+          error.stack,
+        );
         throw new BadRequestException(`Bulk create failed: ${error.message}`);
       }
 
@@ -639,7 +839,11 @@ export class SanctionedEntityService {
       action: AuditActionEnum.SANCTIONED_ENTITY_CREATED,
       entityType: 'SanctionedEntity',
       entityId: saved.id,
-      metadata: { count: entries.length, source, blacklistId: resolvedBlacklistId },
+      metadata: {
+        count: entries.length,
+        source,
+        blacklistId: resolvedBlacklistId,
+      },
     });
 
     return saved;
@@ -677,18 +881,25 @@ export class SanctionedEntityService {
     data: any,
   ): Promise<EntityProfile> {
     // Build fullName from name parts if not directly provided
-    const fullName = data.fullName
-      || [data.name1, data.name2, data.name3, data.name4, data.name5, data.name6]
-          .filter((n: string) => n && String(n).trim())
-          .join(' ')
-      || 'Unknown';
+    const fullName =
+      data.fullName ||
+      [data.name1, data.name2, data.name3, data.name4, data.name5, data.name6]
+        .filter((n: string) => n && String(n).trim())
+        .join(' ') ||
+      'Unknown';
 
     // Build a sanitized rawData snapshot preserving every original field
     const rawData: Record<string, any> = {
-      name1: data.name1 || '', name2: data.name2 || '', name3: data.name3 || '',
-      name4: data.name4 || '', name5: data.name5 || '', name6: data.name6 || '',
+      name1: data.name1 || '',
+      name2: data.name2 || '',
+      name3: data.name3 || '',
+      name4: data.name4 || '',
+      name5: data.name5 || '',
+      name6: data.name6 || '',
       title: data.title || '',
-      nameNonLatin: data.nameNonLatin || '', nonLatinType: data.nonLatinType || '', nonLatinLang: data.nonLatinLang || '',
+      nameNonLatin: data.nameNonLatin || '',
+      nonLatinType: data.nonLatinType || '',
+      nonLatinLang: data.nonLatinLang || '',
       dob: data.dob ? String(data.dob) : '',
       townOfBirth: data.townOfBirth || data.placeOfBirth || '',
       countryOfBirth: data.countryOfBirth || '',
@@ -697,10 +908,12 @@ export class SanctionedEntityService {
       passportDetails: data.passportDetails || '',
       nationalId: data.nationalId || data.nationalIdNumber || '',
       nationalIdDetails: data.nationalIdDetails || '',
-      addr1: data.addr1 || (data.addresses?.[0]) || '',
-      addr2: data.addr2 || (data.addresses?.[1]) || '',
-      addr3: data.addr3 || (data.addresses?.[2]) || '',
-      addr4: data.addr4 || '', addr5: data.addr5 || '', addr6: data.addr6 || '',
+      addr1: data.addr1 || data.addresses?.[0] || '',
+      addr2: data.addr2 || data.addresses?.[1] || '',
+      addr3: data.addr3 || data.addresses?.[2] || '',
+      addr4: data.addr4 || '',
+      addr5: data.addr5 || '',
+      addr6: data.addr6 || '',
       zipCode: data.zipCode || '',
       country: data.country || '',
       otherInfo: data.otherInfo || data.otherInformation || '',
@@ -720,7 +933,9 @@ export class SanctionedEntityService {
       fullName,
     };
 
-    const entityType = data.entityType ? this.mapEntityType(data.entityType) : this.mapGroupType(data.groupType);
+    const entityType = data.entityType
+      ? this.mapEntityType(data.entityType)
+      : this.mapGroupType(data.groupType);
 
     // 1. EntityProfile (the "entry" / person row)
     const profile = manager.create(EntityProfile, {
@@ -790,9 +1005,13 @@ export class SanctionedEntityService {
         nationality: nat ? String(nat) : null,
         placeOfBirth: pob ? String(pob) : null,
         passportNumber: passport ? String(passport) : null,
-        passportDetails: data.passportDetails ? String(data.passportDetails) : null,
+        passportDetails: data.passportDetails
+          ? String(data.passportDetails)
+          : null,
         nationalIdNumber: natId ? String(natId) : null,
-        nationalIdDetails: data.nationalIdDetails ? String(data.nationalIdDetails) : null,
+        nationalIdDetails: data.nationalIdDetails
+          ? String(data.nationalIdDetails)
+          : null,
       });
       await manager.save(indProfile);
     }
@@ -805,8 +1024,13 @@ export class SanctionedEntityService {
     if (entityType === EntityTypeEnum.ORGANIZATION || regNum || industry) {
       if (incDate && String(incDate).trim().length > 0) {
         const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-        if (!dateRegex.test(String(incDate)) || isNaN(Date.parse(String(incDate)))) {
-          throw new BadRequestException(`Invalid date format for incorporationDate: "${incDate}". Expected YYYY-MM-DD.`);
+        if (
+          !dateRegex.test(String(incDate)) ||
+          isNaN(Date.parse(String(incDate)))
+        ) {
+          throw new BadRequestException(
+            `Invalid date format for incorporationDate: "${incDate}". Expected YYYY-MM-DD.`,
+          );
         }
       }
       const orgRepo = manager.getRepository('OrganizationProfile'); // Use string lookup to avoid circular ref if not imported
@@ -821,7 +1045,14 @@ export class SanctionedEntityService {
     }
 
     // 7. Address
-    const addrFields = [data.addr1, data.addr2, data.addr3, data.addr4, data.addr5, data.addr6];
+    const addrFields = [
+      data.addr1,
+      data.addr2,
+      data.addr3,
+      data.addr4,
+      data.addr5,
+      data.addr6,
+    ];
     const validAddrs = (data.addresses || addrFields).filter(
       (a: string) => a && String(a).trim().length > 0,
     );
@@ -835,7 +1066,7 @@ export class SanctionedEntityService {
         city: validAddrs[3] ? String(validAddrs[3]) : null,
         state: validAddrs[4] ? String(validAddrs[4]) : null,
         postalCode: data.zipCode ? String(data.zipCode) : null,
-        country: (data.country || nat) ? String(data.country || nat) : null,
+        country: data.country || nat ? String(data.country || nat) : null,
       });
       await manager.save(address);
     }
@@ -847,9 +1078,16 @@ export class SanctionedEntityService {
   private mapEntityType(entityType?: string): EntityTypeEnum {
     if (!entityType) return EntityTypeEnum.INDIVIDUAL;
     const upper = String(entityType).toUpperCase();
-    if (upper === 'IND' || upper === 'INDIVIDUAL') return EntityTypeEnum.INDIVIDUAL;
-    if (upper === 'ORG' || upper.includes('ORGANIZATION') || upper.includes('COMPANY')) return EntityTypeEnum.ORGANIZATION;
-    if (upper === 'VESSEL' || upper.includes('SHIP')) return EntityTypeEnum.VESSEL;
+    if (upper === 'IND' || upper === 'INDIVIDUAL')
+      return EntityTypeEnum.INDIVIDUAL;
+    if (
+      upper === 'ORG' ||
+      upper.includes('ORGANIZATION') ||
+      upper.includes('COMPANY')
+    )
+      return EntityTypeEnum.ORGANIZATION;
+    if (upper === 'VESSEL' || upper.includes('SHIP'))
+      return EntityTypeEnum.VESSEL;
     return EntityTypeEnum.INDIVIDUAL;
   }
 
@@ -857,8 +1095,10 @@ export class SanctionedEntityService {
   private mapGroupType(groupType?: string): EntityTypeEnum {
     if (!groupType) return EntityTypeEnum.INDIVIDUAL;
     const upper = String(groupType).toUpperCase();
-    if (upper.includes('ORG') || upper.includes('ENTITY')) return EntityTypeEnum.ORGANIZATION;
-    if (upper.includes('VESSEL') || upper.includes('SHIP')) return EntityTypeEnum.VESSEL;
+    if (upper.includes('ORG') || upper.includes('ENTITY'))
+      return EntityTypeEnum.ORGANIZATION;
+    if (upper.includes('VESSEL') || upper.includes('SHIP'))
+      return EntityTypeEnum.VESSEL;
     return EntityTypeEnum.INDIVIDUAL;
   }
 
@@ -876,7 +1116,7 @@ export class SanctionedEntityService {
 
   /** Flatten an EntityProfile + relations into the flat column format the frontend ViewEntriesModal expects */
   private flattenProfile(p: EntityProfile): Record<string, any> {
-    const raw = p.rawData || {} as Record<string, any>;
+    const raw = p.rawData || ({} as Record<string, any>);
 
     // If rawData exists, use it directly — it preserves exact column positions
     // Otherwise fall back to relational data
@@ -884,7 +1124,9 @@ export class SanctionedEntityService {
     const addr = p.addresses?.[0];
     const dob = p.datesOfBirth?.[0];
     const aliasName = p.names?.find((n) => n.nameType === NameTypeEnum.AKA);
-    const nlName = p.names?.find((n) => n.nameType === NameTypeEnum.PRIMARY_NAME_VARIATION);
+    const nlName = p.names?.find(
+      (n) => n.nameType === NameTypeEnum.PRIMARY_NAME_VARIATION,
+    );
 
     return {
       id: p.id,
@@ -921,11 +1163,19 @@ export class SanctionedEntityService {
       regime: raw.regime || '',
       listedOn: raw.listedOn || p.listedOn || '',
       ukSanctionsListDate: raw.ukSanctionsListDate || '',
-      lastUpdated: raw.lastUpdated || p.updatedAt?.toISOString?.()?.split('T')?.[0] || '',
+      lastUpdated:
+        raw.lastUpdated || p.updatedAt?.toISOString?.()?.split('T')?.[0] || '',
       groupId: raw.groupId || p.groupId || '',
-      registrationNumber: raw.registrationNumber || p.organizationProfile?.registrationNumber || '',
-      registrationCountry: raw.registrationCountry || p.organizationProfile?.registrationCountry || '',
-      incorporationDate: raw.incorporationDate || p.organizationProfile?.incorporationDate || '',
+      registrationNumber:
+        raw.registrationNumber ||
+        p.organizationProfile?.registrationNumber ||
+        '',
+      registrationCountry:
+        raw.registrationCountry ||
+        p.organizationProfile?.registrationCountry ||
+        '',
+      incorporationDate:
+        raw.incorporationDate || p.organizationProfile?.incorporationDate || '',
       industry: raw.industry || p.organizationProfile?.industry || '',
       fullName: raw.fullName || p.fullName || '',
       evidenceDocuments: p.evidenceDocuments || [],

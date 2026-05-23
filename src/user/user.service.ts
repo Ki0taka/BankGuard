@@ -1,4 +1,9 @@
-import { Injectable, BadRequestException, NotFoundException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+  Logger,
+} from '@nestjs/common';
 import { UserRepository } from './user.repository';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -17,10 +22,14 @@ export class UserService {
 
   async create(createUserDto: CreateUserDto) {
     if (createUserDto.role === RoleEnum.SUPER_ADMIN) {
-      throw new BadRequestException('Cannot create a user with SUPER_ADMIN role');
+      throw new BadRequestException(
+        'Cannot create a user with SUPER_ADMIN role',
+      );
     }
 
-    const existing = await this.userRepository.findOneBy({ email: createUserDto.email });
+    const existing = await this.userRepository.findOneBy({
+      email: createUserDto.email,
+    });
     if (existing) {
       throw new BadRequestException('User already exists');
     }
@@ -41,7 +50,9 @@ export class UserService {
     if (savedUser.email) {
       await this.mailService.sendInviteEmail(savedUser.email, inviteToken);
     } else {
-      this.logger.error(`Cannot send invitation email: user ${savedUser.id} has no email`);
+      this.logger.error(
+        `Cannot send invitation email: user ${savedUser.id} has no email`,
+      );
     }
 
     return savedUser;
@@ -67,21 +78,28 @@ export class UserService {
     }
 
     const user = await this.findOne(id);
-    
+
     if (updateUserDto.email && updateUserDto.email !== user.email) {
-      const existing = await this.userRepository.findOneBy({ email: updateUserDto.email });
+      const existing = await this.userRepository.findOneBy({
+        email: updateUserDto.email,
+      });
       if (existing) {
-        throw new BadRequestException('Email is already in use by another account');
+        throw new BadRequestException(
+          'Email is already in use by another account',
+        );
       }
     }
 
     Object.assign(user, updateUserDto);
-    
+
     try {
       return await this.userRepository.save(user);
     } catch (error: any) {
-      if (error.code === '23505') { // PostgreSQL unique violation error code
-        throw new BadRequestException('Email is already in use by another account');
+      if (error.code === '23505') {
+        // PostgreSQL unique violation error code
+        throw new BadRequestException(
+          'Email is already in use by another account',
+        );
       }
       throw error;
     }

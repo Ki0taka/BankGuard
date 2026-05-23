@@ -16,7 +16,12 @@ import { SystemSettingModule } from '../system-setting/system-setting.module';
     SanctionedEntityModule,
     SystemSettingModule,
   ],
-  providers: [WebhookService, WebhookListener, EnrichmentService, FormatService],
+  providers: [
+    WebhookService,
+    WebhookListener,
+    EnrichmentService,
+    FormatService,
+  ],
   controllers: [WebhookController],
   exports: [WebhookService],
 })

@@ -1,4 +1,12 @@
-import { IsString, IsUrl, IsEnum, IsArray, IsOptional, IsBoolean, IsObject } from 'class-validator';
+import {
+  IsString,
+  IsUrl,
+  IsEnum,
+  IsArray,
+  IsOptional,
+  IsBoolean,
+  IsObject,
+} from 'class-validator';
 
 export class CreateWebhookTargetDto {
   @IsString()

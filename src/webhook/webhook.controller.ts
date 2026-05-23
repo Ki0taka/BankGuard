@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Body, Param, Put, Delete, Query, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Put,
+  Delete,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { WebhookService } from './webhook.service';
 import { CreateWebhookTargetDto } from './dto/create-webhook-target.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -44,11 +54,16 @@ export class WebhookController {
 
   // Manual trigger for a specific batch to a specific target
   @Post('test-delivery')
-  async testDelivery(@Body() body: { batchId: string; targetId: string; eventType?: string }) {
+  async testDelivery(
+    @Body() body: { batchId: string; targetId: string; eventType?: string },
+  ) {
     const target = await this.webhookService.findTargetById(body.targetId);
     if (!target) throw new Error('Target not found');
-    
+
     // Use the provided eventType or default to MANUAL_TEST
-    return this.webhookService.dispatch(body.batchId, body.eventType || 'MANUAL_TEST');
+    return this.webhookService.dispatch(
+      body.batchId,
+      body.eventType || 'MANUAL_TEST',
+    );
   }
 }

@@ -51,10 +51,11 @@ export class WebhookService {
       where: { isActive: true },
     });
 
-    const matchingTargets = targets.filter(t => 
-      t.eventTypes.includes(eventType) || 
-      t.eventTypes.includes('*') ||
-      eventType === 'MANUAL_TEST' // Allow manual tests to reach all active targets
+    const matchingTargets = targets.filter(
+      (t) =>
+        t.eventTypes.includes(eventType) ||
+        t.eventTypes.includes('*') ||
+        eventType === 'MANUAL_TEST', // Allow manual tests to reach all active targets
     );
 
     if (matchingTargets.length === 0) {
@@ -64,18 +65,26 @@ export class WebhookService {
 
     // Prepare full enriched payload once for all targets (shared)
     const enrichedData = await this.enrichmentService.getFullBatch(batchId);
-    
+
     for (const target of matchingTargets) {
       await this.sendToTarget(target, eventType, enrichedData);
     }
   }
 
-  private async sendToTarget(target: WebhookTarget, eventType: string, sharedData: any) {
+  private async sendToTarget(
+    target: WebhookTarget,
+    eventType: string,
+    sharedData: any,
+  ) {
     const { batch, entries } = sharedData;
 
     // 1. Format the data based on target configuration
-    let formattedPayload: { content: string | Buffer; contentType: string; extension: string };
-    
+    let formattedPayload: {
+      content: string | Buffer;
+      contentType: string;
+      extension: string;
+    };
+
     switch (target.format?.toUpperCase()) {
       case 'XML':
         formattedPayload = this.formatService.toXML(batch, entries);
@@ -87,7 +96,11 @@ export class WebhookService {
         formattedPayload = this.formatService.toHMT(batch, entries);
         break;
       case 'CUSTOM':
-        formattedPayload = this.formatService.toCustom(batch, entries, target.mapping);
+        formattedPayload = this.formatService.toCustom(
+          batch,
+          entries,
+          target.mapping,
+        );
         break;
       case 'JSON':
       default:
@@ -102,10 +115,10 @@ export class WebhookService {
       status: 'PENDING',
       attemptCount: 1,
     });
-    
+
     const savedDelivery = await this.deliveryRepository.save(delivery);
     const timestamp = Date.now().toString();
-    
+
     // 2. Security: HMAC-SHA256 signature
     // For binary payloads, we sign the raw buffer/content
     const signature = crypto
@@ -115,8 +128,10 @@ export class WebhookService {
       .digest('hex');
 
     try {
-      this.logger.log(`Dispatching webhook to: ${target.url} [Event: ${eventType}, Format: ${target.format}]`);
-      
+      this.logger.log(
+        `Dispatching webhook to: ${target.url} [Event: ${eventType}, Format: ${target.format}]`,
+      );
+
       const response = await axios.post(target.url, formattedPayload.content, {
         headers: {
           'Content-Type': formattedPayload.contentType,
@@ -132,12 +147,19 @@ export class WebhookService {
 
       savedDelivery.status = 'SUCCESS';
       savedDelivery.responseStatus = response.status;
-      savedDelivery.responseBody = JSON.stringify(response.data).substring(0, 5000);
+      savedDelivery.responseBody = JSON.stringify(response.data).substring(
+        0,
+        5000,
+      );
     } catch (error) {
-      this.logger.error(`Webhook delivery failed for target ${target.name}: ${error.message}`);
+      this.logger.error(
+        `Webhook delivery failed for target ${target.name}: ${error.message}`,
+      );
       savedDelivery.status = 'FAILED';
       savedDelivery.responseStatus = error.response?.status;
-      savedDelivery.responseBody = JSON.stringify(error.response?.data || error.message).substring(0, 5000);
+      savedDelivery.responseBody = JSON.stringify(
+        error.response?.data || error.message,
+      ).substring(0, 5000);
       savedDelivery.errorMessage = error.message;
     }
 

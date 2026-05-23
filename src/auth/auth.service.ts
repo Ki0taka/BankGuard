@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  BadRequestException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UserService } from '../user/user.service';
 import { LoginDto } from './dto/login.dto';
@@ -21,7 +25,9 @@ export class AuthService {
     }
 
     if (!user.isConfirmed) {
-      throw new UnauthorizedException('Account not confirmed. Please check your email.');
+      throw new UnauthorizedException(
+        'Account not confirmed. Please check your email.',
+      );
     }
 
     // Generate 6-digit OTP
@@ -40,7 +46,7 @@ export class AuthService {
   async verifyOtp(verifyOtpDto: VerifyOtpDto) {
     const { email, code } = verifyOtpDto;
     const user = await this.userService.findOneBy({ email });
-    
+
     if (!user) {
       throw new UnauthorizedException('User not found');
     }

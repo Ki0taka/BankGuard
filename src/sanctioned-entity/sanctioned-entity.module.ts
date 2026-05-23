@@ -29,7 +29,11 @@ import { IndividualProfile } from '../individual-profile/entities/individual-pro
     EntityProfileModule,
   ],
   controllers: [SanctionedEntityController],
-  providers: [SanctionedEntityService, SanctionedEntityRepository, AiExtractionService],
+  providers: [
+    SanctionedEntityService,
+    SanctionedEntityRepository,
+    AiExtractionService,
+  ],
   exports: [SanctionedEntityService, SanctionedEntityRepository],
 })
 export class SanctionedEntityModule {}

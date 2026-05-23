@@ -36,7 +36,9 @@ export class SeedService implements OnApplicationBootstrap {
       await this.userRepository.save(superAdmin);
       console.log('✅ SUPER_ADMIN user created successfully.');
     } else {
-      console.log(`ℹ️ SUPER_ADMIN already exists (count: ${existingAdminCount}). Skipping creation.`);
+      console.log(
+        `ℹ️ SUPER_ADMIN already exists (count: ${existingAdminCount}). Skipping creation.`,
+      );
     }
   }
 }

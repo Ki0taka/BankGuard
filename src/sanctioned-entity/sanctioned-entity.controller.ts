@@ -52,8 +52,14 @@ export class SanctionedEntityController {
 
   @Post('bulk')
   @Roles(RoleEnum.SUPER_ADMIN, RoleEnum.ADMIN, RoleEnum.DATA_ENTRY)
-  bulkCreate(@Body() payload: { source: string; blacklistId?: string; entries: any[] }, @Request() req: any) {
-    return this.sanctionedEntityService.bulkCreate({ ...payload, createdById: req.user.id });
+  bulkCreate(
+    @Body() payload: { source: string; blacklistId?: string; entries: any[] },
+    @Request() req: any,
+  ) {
+    return this.sanctionedEntityService.bulkCreate({
+      ...payload,
+      createdById: req.user.id,
+    });
   }
 
   @Get('stats')
@@ -63,7 +69,12 @@ export class SanctionedEntityController {
   }
 
   @Get()
-  @Roles(RoleEnum.SUPER_ADMIN, RoleEnum.ADMIN, RoleEnum.VERIFICATION, RoleEnum.DATA_ENTRY)
+  @Roles(
+    RoleEnum.SUPER_ADMIN,
+    RoleEnum.ADMIN,
+    RoleEnum.VERIFICATION,
+    RoleEnum.DATA_ENTRY,
+  )
   findAll() {
     return this.sanctionedEntityService.findAll();
   }
@@ -75,7 +86,12 @@ export class SanctionedEntityController {
   }
 
   @Get(':id')
-  @Roles(RoleEnum.SUPER_ADMIN, RoleEnum.ADMIN, RoleEnum.VERIFICATION, RoleEnum.DATA_ENTRY)
+  @Roles(
+    RoleEnum.SUPER_ADMIN,
+    RoleEnum.ADMIN,
+    RoleEnum.VERIFICATION,
+    RoleEnum.DATA_ENTRY,
+  )
   findOne(@Param('id') id: string) {
     return this.sanctionedEntityService.findOne(id);
   }
@@ -115,20 +131,31 @@ export class SanctionedEntityController {
     @Body() metadata: any,
     @Request() req: any,
   ) {
-    return this.sanctionedEntityService.processExcelUpload(file, { ...metadata, createdById: req.user.id });
+    return this.sanctionedEntityService.processExcelUpload(file, {
+      ...metadata,
+      createdById: req.user.id,
+    });
   }
 
   @Post('import-url')
   @Roles(RoleEnum.SUPER_ADMIN, RoleEnum.ADMIN, RoleEnum.DATA_ENTRY)
   importFromUrl(@Body() payload: { url: string } & any, @Request() req: any) {
     const { url, ...metadata } = payload;
-    return this.sanctionedEntityService.importFromUrl(url, { ...metadata, createdById: req.user.id });
+    return this.sanctionedEntityService.importFromUrl(url, {
+      ...metadata,
+      createdById: req.user.id,
+    });
   }
 
   // ── Entry-level CRUD (EntityProfile inside a batch) ──
 
   @Get(':id/entries')
-  @Roles(RoleEnum.SUPER_ADMIN, RoleEnum.ADMIN, RoleEnum.VERIFICATION, RoleEnum.DATA_ENTRY)
+  @Roles(
+    RoleEnum.SUPER_ADMIN,
+    RoleEnum.ADMIN,
+    RoleEnum.VERIFICATION,
+    RoleEnum.DATA_ENTRY,
+  )
   getEntries(@Param('id') id: string) {
     return this.sanctionedEntityService.getEntries(id);
   }
