@@ -2,6 +2,8 @@
 /dist
 /node_modules
 /build
+/uploads/*
+!/uploads/.gitkeep
 
 # Logs
 logs
@@ -46,6 +48,8 @@ lerna-debug.log*
 GEMINI.md
 Project_details.txt
 history.txt
+.agents
+.codex
 
 # temp directory
 .temp

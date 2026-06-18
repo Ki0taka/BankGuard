@@ -1,7 +1,7 @@
 {
-  "name": "pfe",
+  "name": "sanctions-intelligence-management-system",
   "version": "0.0.1",
-  "description": "",
+  "description": "Backend API for a sanctions intelligence management system.",
   "author": "",
   "private": true,
   "license": "UNLICENSED",
